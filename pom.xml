@@ -108,6 +108,12 @@ under the License.
 			<artifactId>flink-connector-kafka-0.11_2.11</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.beam</groupId>
+			<artifactId>beam-sdks-java-nexmark</artifactId>
+			<version>2.3.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -160,7 +166,7 @@ under the License.
 							</filters>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>flinkapp.WordCount</mainClass>
+									<mainClass>flinkapp.wordcount.RateControlledWordCount</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
