@@ -37,7 +37,7 @@ public class StatefulWordCount {
 					.setParallelism(params.getInt("p1", 1));
 
 		// split up the lines in pairs (2-tuples) containing:
-		// (word,1)
+		// (w`ord,1)
 		DataStream<Tuple2<String, Long>> counts = text.rebalance()
 				.flatMap(new Tokenizer())
 				.name("Splitter FlatMap")

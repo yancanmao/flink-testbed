@@ -35,7 +35,7 @@ public class RateControlledWordCount {
 
 		final DataStream<String> text = env.addSource(
 				new RateControlledSourceFunction(
-						params.getInt("source-rate", 80000),
+						params.getInt("source-rate", 100),
 						params.getInt("sentence-size", 100)))
 					.setParallelism(params.getInt("p1", 1));
 

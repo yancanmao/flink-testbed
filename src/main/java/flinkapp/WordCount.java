@@ -13,6 +13,8 @@ import org.apache.flink.util.Collector;
 
 import java.util.Properties;
 
+import static java.lang.Thread.sleep;
+
 public class WordCount {
 
     private static final String INPUT_STREAM_ID = "wc_input";
@@ -22,47 +24,50 @@ public class WordCount {
     public static void main(String[] args) throws Exception {
 
 
-        final SourceFunction<String> source;
-
-        Properties kafkaProps = new Properties();
-        kafkaProps.setProperty("bootstrap.servers", KAFKA_BROKERS);
-
-        FlinkKafkaConsumer011<String> inputConsumer = new FlinkKafkaConsumer011<>(INPUT_STREAM_ID, new SimpleStringSchema(), kafkaProps);
-
-        inputConsumer.setStartFromLatest();
-        inputConsumer.setCommitOffsetsOnCheckpoints(false);
-
-        source = inputConsumer;
-
-        StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
-
-        see.enableCheckpointing(2000L);
-
-
-        DataStream<String> words = see.addSource(source);
-
-        DataStream<Tuple2<String, Integer>> counts =
-                // split up the lines in pairs (2-tuples) containing: (word,1)
-                words.flatMap(new Tokenizer())
-                        // group by the tuple field "0" and sum up tuple field "1"
-                        .keyBy(0).sum(1);
-
-        // emit result
-        System.out.println("Printing result to stdout. Use --output to specify output path.");
-        counts.print();
-
-        counts
-                .map(new MapFunction<Tuple2<String,Integer>, String>() {
-                    @Override
-                    public String map(Tuple2<String, Integer> tuple) {
-                        return tuple.toString();
-                    }
-                })
-                .addSink(new FlinkKafkaProducer011<>(KAFKA_BROKERS, OUTPUT_STREAM_ID, new SimpleStringSchema()));
-
-        // execute program
-        see.execute("Streaming WordCount");
-
+//        final SourceFunction<String> source;
+//
+//        Properties kafkaProps = new Properties();
+//        kafkaProps.setProperty("bootstrap.servers", KAFKA_BROKERS);
+//
+//        FlinkKafkaConsumer011<String> inputConsumer = new FlinkKafkaConsumer011<>(INPUT_STREAM_ID, new SimpleStringSchema(), kafkaProps);
+//
+//        inputConsumer.setStartFromLatest();
+//        inputConsumer.setCommitOffsetsOnCheckpoints(false);
+//
+//        source = inputConsumer;
+//
+//        StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
+//
+//        see.enableCheckpointing(2000L);
+//
+//
+//        DataStream<String> words = see.addSource(source);
+//
+//        DataStream<Tuple2<String, Integer>> counts =
+//                // split up the lines in pairs (2-tuples) containing: (word,1)
+//                words.flatMap(new Tokenizer())
+//                        // group by the tuple field "0" and sum up tuple field "1"
+//                        .keyBy(0).sum(1);
+//
+//        // emit result
+//        System.out.println("Printing result to stdout. Use --output to specify output path.");
+//        counts.print();
+//
+//        counts
+//                .map(new MapFunction<Tuple2<String,Integer>, String>() {
+//                    @Override
+//                    public String map(Tuple2<String, Integer> tuple) {
+//                        return tuple.toString();
+//                    }
+//                })
+//                .addSink(new FlinkKafkaProducer011<>(KAFKA_BROKERS, OUTPUT_STREAM_ID, new SimpleStringSchema()));
+//
+//        // execute program
+//        see.execute("Streaming WordCount");
+        long processingStart = System.nanoTime();
+        System.out.println(processingStart);
+        sleep(1000);
+        System.out.println(System.nanoTime() - processingStart);
     }
 
     /**

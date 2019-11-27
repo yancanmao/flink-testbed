@@ -19,3 +19,4 @@ build/
 state
 .attach*
 hs*
+rates/
