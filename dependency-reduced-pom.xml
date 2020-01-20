@@ -138,10 +138,6 @@
           <artifactId>flink-shaded-asm-6</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
-        <exclusion>
-          <artifactId>commons-math3</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -149,12 +145,6 @@
       <artifactId>flink-streaming-java_2.11</artifactId>
       <version>1.8.1</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-math3</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
