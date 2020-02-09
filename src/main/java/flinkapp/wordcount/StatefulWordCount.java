@@ -7,6 +7,8 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.common.state.MapState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
@@ -92,16 +94,32 @@ public class StatefulWordCount {
 	// USER FUNCTIONS
 	// *************************************************************************
 
-	public static final class Tokenizer implements FlatMapFunction<Tuple2<String, String>, Tuple2<String, Long>> {
+	public static final class Tokenizer extends RichFlatMapFunction<Tuple2<String, String>, Tuple2<String, Long>> {
 		private static final long serialVersionUID = 1L;
+
+        private transient MapState<String, Long> countMap;
+
+        @Override
+        public void open(Configuration config) {
+            MapStateDescriptor<String, Long> descriptor =
+                    new MapStateDescriptor<>("splitter", String.class, Long.class);
+
+            countMap = getRuntimeContext().getMapState(descriptor);
+        }
 
 		@Override
 		public void flatMap(Tuple2<String, String> value, Collector<Tuple2<String, Long>> out) throws Exception {
 			long curTime = System.currentTimeMillis();
-			while (System.currentTimeMillis() - curTime < 10) {}
+			while (System.currentTimeMillis() - curTime < 1) {}
+
+
 
 			// normalize and split the line
 			String[] tokens = value.f1.toLowerCase().split("\\W+");
+
+			Long cur = countMap.get(value.f0);
+			cur = (cur == null) ? 1 : cur + 1;
+			countMap.put(value.f0, cur);
 
 			// emit the pairs
 			for (String token : tokens) {
@@ -130,7 +148,7 @@ public class StatefulWordCount {
 
 		@Override
 		public void flatMap(Tuple2<String, Long> value, Collector<Tuple2<String, Long>> out) throws Exception {
-			count.add(value.f1);
+//			count.add(value.f1);
 			long curTime = System.currentTimeMillis();
 //			while (System.currentTimeMillis() - curTime < 1) {}
 			out.collect(new Tuple2<>(value.f0, count.get()));
