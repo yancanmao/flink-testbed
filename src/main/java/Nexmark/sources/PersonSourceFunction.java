@@ -36,7 +36,7 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
     private volatile boolean running = true;
     private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
     private long eventsCountSoFar = 0;
-    private final int rate;
+    private int rate;
 
     public PersonSourceFunction(int srcRate) {
         this.rate = srcRate;
@@ -44,8 +44,14 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
 
     @Override
     public void run(SourceContext<Person> ctx) throws Exception {
+        long streamStartTime = System.currentTimeMillis();
+
         while (running && eventsCountSoFar < 40_000_000) {
             long emitStartTime = System.currentTimeMillis();
+
+            if (System.currentTimeMillis() - streamStartTime >= 10000) {
+                changeRate(true, 1000);
+            }
 
             for (int i = 0; i < rate; i++) {
                 long nextId = nextId();
@@ -78,4 +84,13 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
     }
 
+    private void changeRate(Boolean inc, Integer n) {
+        if (inc) {
+            rate += n;
+        } else {
+            if (rate > n) {
+                rate -= n;
+            }
+        }
+    }
 }

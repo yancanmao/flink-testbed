@@ -34,7 +34,7 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
     private volatile boolean running = true;
     private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
     private long eventsCountSoFar = 0;
-    private final int rate;
+    private int rate;
 
     public AuctionSourceFunction(int srcRate) {
         this.rate = srcRate;
@@ -42,8 +42,14 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
 
     @Override
     public void run(SourceContext<Auction> ctx) throws Exception {
+        long streamStartTime = System.currentTimeMillis();
+
         while (running && eventsCountSoFar < 70_000_000) {
             long emitStartTime = System.currentTimeMillis();
+
+            if (System.currentTimeMillis() - streamStartTime >= 10000) {
+                changeRate(true, 1000);
+            }
 
             for (int i = 0; i < rate; i++) {
                 long nextId = nextId();
@@ -75,4 +81,13 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
     }
 
+    private void changeRate(Boolean inc, Integer n) {
+        if (inc) {
+            rate += n;
+        } else {
+            if (rate > n) {
+                rate -= n;
+            }
+        }
+    }
 }

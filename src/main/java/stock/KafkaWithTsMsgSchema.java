@@ -43,7 +43,7 @@ public class KafkaWithTsMsgSchema implements DeserializationSchema<Tuple2<String
         String[] stockArr = msg.split("\\|");
 
         if(stockArr.length > 2){
-            return new Tuple2<String, String>(stockArr[Sec_Code], stockArr[Order_Price]);
+            return new Tuple2<String, String>(stockArr[Sec_Code], msg);
         }else{
             System.out.println("Fail due to invalid msg format.. ["+msg+"]");
             return new Tuple2<String, String>(msg, "0");
