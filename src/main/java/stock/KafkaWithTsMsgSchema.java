@@ -56,7 +56,7 @@ public class KafkaWithTsMsgSchema implements DeserializationSchema<Tuple2<String
     }
 
     public byte[] serialize(Tuple2<String, String> element) {
-        return "MAX - ".concat(element.f0).concat("#").concat(String.valueOf(element.f1)).getBytes(this.charset);
+        return String.valueOf(element.f1).getBytes(this.charset);
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
