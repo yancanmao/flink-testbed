@@ -1,6 +1,7 @@
 package stock;
 
 import Nexmark.sinks.DummySink;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -98,12 +99,15 @@ public class StockExchange {
 
         private Map<String, String> stockExchangeMapSell = new HashMap<>();
         private Map<String, String> stockExchangeMapBuy = new HashMap<>();
+        private RandomDataGenerator randomGen = new RandomDataGenerator();
 
         @Override
         public void flatMap(Tuple2<String, String> value, Collector<Tuple2<String, String>> out) {
 
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
+
+            delay(4);
 
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 return;
@@ -230,6 +234,15 @@ public class StockExchange {
             for (Map.Entry<String, String> order : matchedSell.entrySet()) {
                 stockExchangeMapSell.remove(order.getKey());
             }
+        }
+
+        private void delay(int interval) {
+            Double ranN = randomGen.nextGaussian(interval, 1);
+            ranN = ranN*1000000;
+            long delay = ranN.intValue();
+            if (delay < 0) delay = 6000000;
+            Long start = System.nanoTime();
+            while (System.nanoTime() - start < delay) {}
         }
     }
 }
