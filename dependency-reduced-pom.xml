@@ -88,7 +88,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>flinkapp.wordcount.StatefulWordCount</mainClass>
+                  <mainClass>stock.StockExchange</mainClass>
                 </transformer>
               </transformers>
             </configuration>
