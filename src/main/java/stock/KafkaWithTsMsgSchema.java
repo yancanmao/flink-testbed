@@ -5,15 +5,21 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.TupleTypeInfo;
+import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema;
 import org.apache.flink.util.Preconditions;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-public class KafkaWithTsMsgSchema implements DeserializationSchema<Tuple2<String, String>>, SerializationSchema<Tuple2<String, String>> {
+public class KafkaWithTsMsgSchema implements KafkaDeserializationSchema<Tuple3<String, String, Long>>, SerializationSchema<Tuple2<String, String>> {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -38,21 +44,35 @@ public class KafkaWithTsMsgSchema implements DeserializationSchema<Tuple2<String
     }
 
     // split stock string with delimeter
-    public Tuple2<String, String> deserialize(byte[] message) {
-        String msg = new String(message, charset);
-        String[] stockArr = msg.split("\\|");
+//    public Tuple2<String, String> deserialize(byte[] message) {
+//        String msg = new String(message, charset);
+//        String[] stockArr = msg.split("\\|");
+//
+//        if(stockArr.length > 2){
+//            return new Tuple2<String, String>(stockArr[Sec_Code], msg);
+//        }else{
+//            System.out.println("Fail due to invalid msg format.. ["+msg+"]");
+//            return new Tuple2<String, String>(msg, "0");
+//        }
+//    }
 
-        if(stockArr.length > 2){
-            return new Tuple2<String, String>(stockArr[Sec_Code], msg);
-        }else{
-            System.out.println("Fail due to invalid msg format.. ["+msg+"]");
-            return new Tuple2<String, String>(msg, "0");
-        }
+    @Override
+    public boolean isEndOfStream(Tuple3<String, String, Long> stringLongTuple2) {
+        return false;
     }
 
     @Override
-    public boolean isEndOfStream(Tuple2<String, String> stringLongTuple2) {
-        return false;
+    public Tuple3<String, String, Long> deserialize(ConsumerRecord<byte[], byte[]> consumerRecord) {
+        Long ts = consumerRecord.timestamp();
+        String msg = new String(consumerRecord.value(), charset);
+        List<String> stockArr = Arrays.asList(msg.split("\\|"));
+
+        if(stockArr.size() > 2){
+            return new Tuple3<>(stockArr.get(Sec_Code), msg, ts);
+        } else {
+            System.out.println("Fail due to invalid msg format.. ["+msg+"]");
+            return new Tuple3<>(msg, "0", 0L);
+        }
     }
 
     public byte[] serialize(Tuple2<String, String> element) {
@@ -71,6 +91,6 @@ public class KafkaWithTsMsgSchema implements DeserializationSchema<Tuple2<String
     }
 
     @Override
-    public TypeInformation<Tuple2<String, String>> getProducedType() {
-        return new TupleTypeInfo<Tuple2<String, String>>(BasicTypeInfo.STRING_TYPE_INFO, BasicTypeInfo.STRING_TYPE_INFO);
+    public TypeInformation<Tuple3<String, String, Long>> getProducedType() {
+        return new TupleTypeInfo<>(BasicTypeInfo.STRING_TYPE_INFO, BasicTypeInfo.STRING_TYPE_INFO, BasicTypeInfo.LONG_TYPE_INFO);
     }}

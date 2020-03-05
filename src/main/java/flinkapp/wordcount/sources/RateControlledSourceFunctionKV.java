@@ -30,7 +30,7 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
     public void run(SourceContext<Tuple2<String, String>> ctx) throws Exception {
 
         // interval to increase or descrease input rate
-        int interval = 50000;
+        int interval = 30000;
         int interval2 = 100000;
         int count = 0;
         boolean isInc = true;
@@ -57,15 +57,15 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
 
             long emitStartTime = System.currentTimeMillis();
             int cur = 0;
-            for (int i = 0; i < sentenceRate; i++) {
+            for (int i = 0; i < sentenceRate/50; i++) {
                 ctx.collect(Tuple2.of(getChar(cur), generator.nextSentence(sentenceSize)));
                 cur++;
                 count++;
             }
             // Sleep for the rest of timeslice if needed
             long emitTime = System.currentTimeMillis() - emitStartTime;
-            if (emitTime < 1000) {
-                sleep(1000 - emitTime);
+            if (emitTime < 1000/50) {
+                sleep(1000/50 - emitTime);
             }
 
 

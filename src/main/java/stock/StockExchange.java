@@ -10,6 +10,7 @@ import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
@@ -24,6 +25,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class StockExchange {
@@ -63,13 +68,13 @@ public class StockExchange {
 
         Properties kafkaProps = new Properties();
         kafkaProps.setProperty("bootstrap.servers", params.get("kafka", KAFKA_BROKERS));
-        FlinkKafkaConsumer011<Tuple2<String, String>> inputConsumer = new FlinkKafkaConsumer011<>(
+        FlinkKafkaConsumer011<Tuple3<String, String, Long>> inputConsumer = new FlinkKafkaConsumer011<>(
                 INPUT_STREAM_ID, new KafkaWithTsMsgSchema(), kafkaProps);
 
         inputConsumer.setStartFromLatest();
         inputConsumer.setCommitOffsetsOnCheckpoints(false);
 
-        final DataStream<Tuple2<String, String>> text = env.addSource(
+        final DataStream<Tuple3<String, String, Long>> text = env.addSource(
                 inputConsumer);
 
         // split up the lines in pairs (2-tuples) containing:
@@ -94,15 +99,19 @@ public class StockExchange {
     // USER FUNCTIONS
     // *************************************************************************
 
-    public static final class MatchMaker implements FlatMapFunction<Tuple2<String, String>, Tuple2<String, String>> {
+    public static final class MatchMaker extends RichFlatMapFunction<Tuple3<String, String, Long>, Tuple2<String, String>> {
         private static final long serialVersionUID = 1L;
 
         private Map<String, String> stockExchangeMapSell = new HashMap<>();
         private Map<String, String> stockExchangeMapBuy = new HashMap<>();
         private RandomDataGenerator randomGen = new RandomDataGenerator();
+        long start = System.currentTimeMillis();
+        long latency = 0;
+        int tuples = 0;
+        int epoch = 0;
 
         @Override
-        public void flatMap(Tuple2<String, String> value, Collector<Tuple2<String, String>> out) {
+        public void flatMap(Tuple3<String, String, Long> value, Collector<Tuple2<String, String>> out) {
 
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
@@ -113,6 +122,28 @@ public class StockExchange {
                 return;
             }
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
+
+            latency += System.currentTimeMillis() - value.f2;
+            tuples++;
+
+            if (System.currentTimeMillis() - start >= 1000) {
+
+                float avg_latency = (float) latency / tuples;
+
+                epoch++;
+                tuples = 0;
+                latency = 0;
+
+                List<String> latency = Arrays.asList(String.valueOf(avg_latency));
+
+                Path latencyFile = Paths.get("./latency.log").toAbsolutePath();
+                try {
+                    Files.write(latencyFile, latency, Charset.forName("UTF-8"));
+                } catch (IOException e) {
+                    System.err.println("Error while writing latency file for epoch " + epoch + ".");
+                    e.printStackTrace();
+                }
+            }
             out.collect(new Tuple2<>(value.f0, value.f1));
         }
 
