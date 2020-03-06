@@ -6,6 +6,8 @@ import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.common.state.MapState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
@@ -14,6 +16,7 @@ import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -55,6 +58,9 @@ public class StockExchange {
 
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        env.setStateBackend(new FsStateBackend("file:///home/samza/states"));
+//        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 
         // make parameters available in the web interface
         env.getConfig().setGlobalJobParameters(params);
@@ -109,10 +115,18 @@ public class StockExchange {
         long latency = 0;
         int tuples = 0;
         int epoch = 0;
+        private transient MapState<String, String> countMap;
 
         @Override
-        public void flatMap(Tuple3<String, String, Long> value, Collector<Tuple2<String, String>> out) {
+        public void open(Configuration config) {
+            MapStateDescriptor<String, String> descriptor =
+                    new MapStateDescriptor<>("matchmaker", String.class, String.class);
 
+            countMap = getRuntimeContext().getMapState(descriptor);
+        }
+
+        @Override
+        public void flatMap(Tuple3<String, String, Long> value, Collector<Tuple2<String, String>> out) throws Exception {
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
 
@@ -121,6 +135,9 @@ public class StockExchange {
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 return;
             }
+
+            countMap.put(orderArr[Sec_Code], stockOrder);
+
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
             latency += System.currentTimeMillis() - value.f2;
@@ -131,7 +148,7 @@ public class StockExchange {
                 epoch++;
                 tuples = 0;
                 latency = 0;
-                System.out.println("latency: " + avg_latency);
+                System.out.println("latency: " + avg_latency + " ts: " + System.nanoTime());
 //                List<String> latency = Arrays.asList(String.valueOf(avg_latency));
 
 //                Path latencyFile = Paths.get("./latency.log").toAbsolutePath();
