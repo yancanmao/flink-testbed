@@ -140,25 +140,26 @@ public class StockExchange {
 
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
-            latency += System.currentTimeMillis() - value.f2;
-            tuples++;
-            if (System.currentTimeMillis() - start >= 1000) {
-                start = System.currentTimeMillis();
-                float avg_latency = (float) latency / tuples;
-                epoch++;
-                tuples = 0;
-                latency = 0;
-                System.out.println("latency: " + avg_latency + " ts: " + System.nanoTime());
-//                List<String> latency = Arrays.asList(String.valueOf(avg_latency));
-
-//                Path latencyFile = Paths.get("./latency.log").toAbsolutePath();
-//                try {
-//                    Files.write(latencyFile, latency, Charset.forName("UTF-8"));
-//                } catch (IOException e) {
-//                    System.err.println("Error while writing latency file for epoch " + epoch + ".");
-//                    e.printStackTrace();
-//                }
-            }
+//            latency += System.currentTimeMillis() - value.f2;
+            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
+//            tuples++;
+//            if (System.currentTimeMillis() - start >= 1000) {
+//                start = System.currentTimeMillis();
+//                float avg_latency = (float) latency / tuples;
+//                epoch++;
+//                tuples = 0;
+//                latency = 0;
+//                System.out.println("latency: " + avg_latency + " ts: " + System.nanoTime());
+////                List<String> latency = Arrays.asList(String.valueOf(avg_latency));
+//
+////                Path latencyFile = Paths.get("./latency.log").toAbsolutePath();
+////                try {
+////                    Files.write(latencyFile, latency, Charset.forName("UTF-8"));
+////                } catch (IOException e) {
+////                    System.err.println("Error while writing latency file for epoch " + epoch + ".");
+////                    e.printStackTrace();
+////                }
+//            }
             out.collect(new Tuple2<>(value.f0, value.f1));
         }
 
