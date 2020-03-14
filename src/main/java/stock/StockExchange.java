@@ -81,13 +81,14 @@ public class StockExchange {
         inputConsumer.setCommitOffsetsOnCheckpoints(false);
 
         final DataStream<Tuple3<String, String, Long>> text = env.addSource(
-                inputConsumer);
+                inputConsumer).setMaxParallelism(params.getInt("mp2", 64));
 
         // split up the lines in pairs (2-tuples) containing:
         DataStream<Tuple2<String, String>> counts = text.keyBy(0)
                 .flatMap(new MatchMaker())
                 .name("MatchMaker FlatMap")
                 .uid("flatmap")
+                .setMaxParallelism(params.getInt("mp2", 64))
                 .setParallelism(params.getInt("p2", 3))
                 .keyBy(0);
 
@@ -141,7 +142,7 @@ public class StockExchange {
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
 //            latency += System.currentTimeMillis() - value.f2;
-            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
+//            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
 //            tuples++;
 //            if (System.currentTimeMillis() - start >= 1000) {
 //                start = System.currentTimeMillis();
