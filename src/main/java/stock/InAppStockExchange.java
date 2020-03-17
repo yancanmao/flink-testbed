@@ -137,8 +137,8 @@ public class InAppStockExchange {
 
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
-//            latency += System.currentTimeMillis() - value.f2;
-//            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
+            latency += System.currentTimeMillis() - value.f2;
+            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
 //            tuples++;
 //            if (System.currentTimeMillis() - start >= 1000) {
 //                start = System.currentTimeMillis();
