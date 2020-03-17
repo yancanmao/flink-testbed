@@ -69,13 +69,13 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
             }
 
 
-            if (System.currentTimeMillis() - intervalStartTime > interval && incTimes < 4) {
-                sentenceRate = isInc ? sentenceRate + 500 : sentenceRate - 500;
-                intervalStartTime = System.currentTimeMillis();
-//                isInc = !isInc;
-                incTimes++;
-                System.out.println("current input rate is: " +  sentenceRate);
-            }
+//            if (System.currentTimeMillis() - intervalStartTime > interval && incTimes < 4) {
+//                sentenceRate = isInc ? sentenceRate + 500 : sentenceRate - 500;
+//                intervalStartTime = System.currentTimeMillis();
+////                isInc = !isInc;
+//                incTimes++;
+//                System.out.println("current input rate is: " +  sentenceRate);
+//            }
         }
 
         ctx.close();
