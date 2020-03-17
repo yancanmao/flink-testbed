@@ -127,7 +127,7 @@ public class InAppStockExchange {
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
 
-            delay(1000000);
+            delay(2);
 
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 return;
@@ -281,10 +281,9 @@ public class InAppStockExchange {
         }
 
         private void delay(int interval) {
-//            Double ranN = randomGen.nextGaussian(interval, 1);
-//            ranN = ranN*100000;
-//            long delay = ranN.intValue();
-            long delay = interval;
+            Double ranN = randomGen.nextGaussian(interval, 1);
+            ranN = ranN*1000000;
+            long delay = ranN.intValue();
             if (delay < 0) delay = 6000000;
             Long start = System.nanoTime();
             while (System.nanoTime() - start < delay) {}
