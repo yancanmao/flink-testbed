@@ -1,9 +1,16 @@
 package stock;
 
+import Nexmark.sinks.DummySink;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.common.state.ReducingState;
+import org.apache.flink.api.common.state.ReducingStateDescriptor;
+import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
@@ -16,14 +23,18 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.apache.flink.util.Collector;
-import stock.sources.SSERealRateSourceFunctionKV;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
-public class InAppStockExchange {
+public class StockExchange {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -48,7 +59,7 @@ public class InAppStockExchange {
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-//        env.setStateBackend(new FsStateBackend("file:///home/samza/states"));
+        env.setStateBackend(new FsStateBackend("file:///home/samza/states"));
 //        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 
         // make parameters available in the web interface
@@ -69,16 +80,8 @@ public class InAppStockExchange {
         inputConsumer.setStartFromLatest();
         inputConsumer.setCommitOffsetsOnCheckpoints(false);
 
-//        final DataStream<Tuple3<String, String, Long>> text = env.addSource(
-//                inputConsumer).setMaxParallelism(params.getInt("mp2", 64));
-
         final DataStream<Tuple3<String, String, Long>> text = env.addSource(
-                new SSERealRateSourceFunctionKV(
-                        params.get("source-file", "/home/samza/SSE_data/sb-50ms.txt")))
-//                    params.get("source-file", "/root/SSE-kafka-producer/sb-50ms.txt")))
-                .uid("sentence-source")
-                .setParallelism(params.getInt("p1", 1))
-                .setMaxParallelism(params.getInt("mp2", 64));
+                inputConsumer).setMaxParallelism(params.getInt("mp2", 64));
 
         // split up the lines in pairs (2-tuples) containing:
         DataStream<Tuple2<String, String>> counts = text.keyBy(0)
@@ -117,10 +120,10 @@ public class InAppStockExchange {
 
         @Override
         public void open(Configuration config) {
-//            MapStateDescriptor<String, String> descriptor =
-//                    new MapStateDescriptor<>("matchmaker", String.class, String.class);
-//
-//            countMap = getRuntimeContext().getMapState(descriptor);
+            MapStateDescriptor<String, String> descriptor =
+                    new MapStateDescriptor<>("matchmaker", String.class, String.class);
+
+            countMap = getRuntimeContext().getMapState(descriptor);
         }
 
         @Override
@@ -128,18 +131,18 @@ public class InAppStockExchange {
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
 
-//            delay(2);
+            delay(5);
 
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 return;
             }
 
-//            countMap.put(orderArr[Sec_Code], stockOrder);
+            countMap.put(orderArr[Sec_Code], stockOrder);
 
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
-            latency += System.currentTimeMillis() - value.f2;
-            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
+//            latency += System.currentTimeMillis() - value.f2;
+//            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
 //            tuples++;
 //            if (System.currentTimeMillis() - start >= 1000) {
 //                start = System.currentTimeMillis();
@@ -279,8 +282,6 @@ public class InAppStockExchange {
             for (Map.Entry<String, String> order : matchedSell.entrySet()) {
                 stockExchangeMapSell.remove(order.getKey());
             }
-
-            System.out.println("stockExchangeMapBuy: " + stockExchangeMapBuy.size() + " stockExchangeMapSell: " + stockExchangeMapSell.size());
         }
 
         private void delay(int interval) {

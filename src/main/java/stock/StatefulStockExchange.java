@@ -1,29 +1,41 @@
 package stock;
 
+import Nexmark.sinks.DummySink;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.common.state.ReducingState;
+import org.apache.flink.api.common.state.ReducingStateDescriptor;
+import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.apache.flink.util.Collector;
-import stock.sources.SSERealRateSourceFunctionKV;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
-public class InAppStockExchange {
+public class StatefulStockExchange {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -40,6 +52,8 @@ public class InAppStockExchange {
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
 
+    private static final int MAX_MEM_STATE_SIZE = 1024*1024*1024;
+
     public static void main(String[] args) throws Exception {
 
         // Checking input parameters
@@ -48,6 +62,7 @@ public class InAppStockExchange {
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+//        env.setStateBackend(new MemoryStateBackend(MAX_MEM_STATE_SIZE, false));
 //        env.setStateBackend(new FsStateBackend("file:///home/samza/states"));
 //        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 
@@ -69,16 +84,8 @@ public class InAppStockExchange {
         inputConsumer.setStartFromLatest();
         inputConsumer.setCommitOffsetsOnCheckpoints(false);
 
-//        final DataStream<Tuple3<String, String, Long>> text = env.addSource(
-//                inputConsumer).setMaxParallelism(params.getInt("mp2", 64));
-
         final DataStream<Tuple3<String, String, Long>> text = env.addSource(
-                new SSERealRateSourceFunctionKV(
-                        params.get("source-file", "/home/samza/SSE_data/sb-50ms.txt")))
-//                    params.get("source-file", "/root/SSE-kafka-producer/sb-50ms.txt")))
-                .uid("sentence-source")
-                .setParallelism(params.getInt("p1", 1))
-                .setMaxParallelism(params.getInt("mp2", 64));
+                inputConsumer).setMaxParallelism(params.getInt("mp2", 64));
 
         // split up the lines in pairs (2-tuples) containing:
         DataStream<Tuple2<String, String>> counts = text.keyBy(0)
@@ -106,8 +113,10 @@ public class InAppStockExchange {
     public static final class MatchMaker extends RichFlatMapFunction<Tuple3<String, String, Long>, Tuple2<String, String>> {
         private static final long serialVersionUID = 1L;
 
-        private Map<String, String> stockExchangeMapSell = new HashMap<>();
-        private Map<String, String> stockExchangeMapBuy = new HashMap<>();
+        //        private Map<String, String> stockExchangeMapSell = new HashMap<>();
+//        private Map<String, String> stockExchangeMapBuy = new HashMap<>();
+        private transient MapState<String, String> stockExchangeMapSell;
+        private transient MapState<String, String> stockExchangeMapBuy;
         private RandomDataGenerator randomGen = new RandomDataGenerator();
         long start = System.currentTimeMillis();
         long latency = 0;
@@ -119,8 +128,17 @@ public class InAppStockExchange {
         public void open(Configuration config) {
 //            MapStateDescriptor<String, String> descriptor =
 //                    new MapStateDescriptor<>("matchmaker", String.class, String.class);
-//
 //            countMap = getRuntimeContext().getMapState(descriptor);
+
+
+            MapStateDescriptor<String, String> buyDescriptor =
+                    new MapStateDescriptor<>("matchmaker buy", String.class, String.class);
+
+            MapStateDescriptor<String, String> sellDescriptor =
+                    new MapStateDescriptor<>("matchmaker sale", String.class, String.class);
+
+            stockExchangeMapBuy = getRuntimeContext().getMapState(buyDescriptor);
+            stockExchangeMapSell = getRuntimeContext().getMapState(sellDescriptor);
         }
 
         @Override
@@ -128,7 +146,7 @@ public class InAppStockExchange {
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
 
-//            delay(2);
+            delay(2);
 
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 return;
@@ -138,8 +156,8 @@ public class InAppStockExchange {
 
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
-            latency += System.currentTimeMillis() - value.f2;
-            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
+//            latency += System.currentTimeMillis() - value.f2;
+//            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
 //            tuples++;
 //            if (System.currentTimeMillis() - start >= 1000) {
 //                start = System.currentTimeMillis();
@@ -161,28 +179,32 @@ public class InAppStockExchange {
             out.collect(new Tuple2<>(value.f0, value.f1));
         }
 
-        public Map<String, String> doStockExchange(String[] orderArr, String direction) {
+        public Map<String, String> doStockExchange(String[] orderArr, String direction) throws Exception {
             Map<String, String> matchedResult = new HashMap<>();
             if (direction.equals("")) {
                 System.out.println("bad tuple received!");
                 return matchedResult;
             }
             if (direction.equals("S")) {
+//                stockExchangeMapSell.put(orderArr[Sec_Code], String.join("|", orderArr));
                 stockExchangeMapSell.put(orderArr[Sec_Code], String.join("|", orderArr));
                 matchedResult = tradeSell(orderArr, stockExchangeMapBuy);
             } else {
+//                stockExchangeMapBuy.put(orderArr[Sec_Code], String.join("|", orderArr));
                 stockExchangeMapBuy.put(orderArr[Sec_Code], String.join("|", orderArr));
                 matchedResult = tradeBuy(orderArr, stockExchangeMapSell);
             }
             return matchedResult;
         }
 
-        private Map<String, String> tradeSell(String[] sellerOrder, Map<String, String> stockExchangeMap) {
+        //        private Map<String, String> tradeSell(String[] sellerOrder, Map<String, String> stockExchangeMap) {
+        private Map<String, String> tradeSell(String[] sellerOrder, MapState<String, String> stockExchangeMap) throws Exception {
             Map<String, String> matchedBuy = new HashMap<>();
             Map<String, String> matchedSell = new HashMap<>();
             Map<String, String> pendingBuy = new HashMap<>();
             Map<String, String> pendingSell = new HashMap<>();
-            Iterator iter = stockExchangeMap.entrySet().iterator();
+            Iterator iter = null;
+            iter = stockExchangeMap.iterator();
             while (iter.hasNext()) {
                 Map.Entry<String, String> entry = (Map.Entry<String, String>) iter.next();
                 String orderNo = entry.getKey();
@@ -210,12 +232,13 @@ public class InAppStockExchange {
             return matchedSell;
         }
 
-        private Map<String, String> tradeBuy(String[] buyerOrder, Map<String, String> stockExchangeMap) {
+        private Map<String, String> tradeBuy(String[] buyerOrder, MapState<String, String> stockExchangeMap) throws Exception {
             Map<String, String> matchedBuy = new HashMap<>();
             Map<String, String> matchedSell = new HashMap<>();
             Map<String, String> pendingBuy = new HashMap<>();
             Map<String, String> pendingSell = new HashMap<>();
-            Iterator iter = stockExchangeMap.entrySet().iterator();
+            Iterator iter = null;
+            iter = stockExchangeMap.iterator();
             while (iter.hasNext()) {
                 Map.Entry<String, String> entry = (Map.Entry<String, String>) iter.next();
                 String orderNo = entry.getKey();
@@ -266,7 +289,7 @@ public class InAppStockExchange {
                 Map<String, String> pendingBuy,
                 Map<String, String> pendingSell,
                 Map<String, String> matchedBuy,
-                Map<String, String> matchedSell) {
+                Map<String, String> matchedSell) throws Exception {
             for (Map.Entry<String, String> order : pendingBuy.entrySet()) {
                 stockExchangeMapBuy.put(order.getKey(), order.getValue());
             }
@@ -279,8 +302,6 @@ public class InAppStockExchange {
             for (Map.Entry<String, String> order : matchedSell.entrySet()) {
                 stockExchangeMapSell.remove(order.getKey());
             }
-
-            System.out.println("stockExchangeMapBuy: " + stockExchangeMapBuy.size() + " stockExchangeMapSell: " + stockExchangeMapSell.size());
         }
 
         private void delay(int interval) {

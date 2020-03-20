@@ -17,6 +17,7 @@ import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -51,6 +52,8 @@ public class StockExchange {
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
 
+    private static final int MAX_MEM_STATE_SIZE = 1024*1024*1024;
+
     public static void main(String[] args) throws Exception {
 
         // Checking input parameters
@@ -59,7 +62,8 @@ public class StockExchange {
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        env.setStateBackend(new FsStateBackend("file:///home/samza/states"));
+//        env.setStateBackend(new MemoryStateBackend(MAX_MEM_STATE_SIZE, false));
+//        env.setStateBackend(new FsStateBackend("file:///home/samza/states"));
 //        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 
         // make parameters available in the web interface
@@ -111,6 +115,8 @@ public class StockExchange {
 
         private Map<String, String> stockExchangeMapSell = new HashMap<>();
         private Map<String, String> stockExchangeMapBuy = new HashMap<>();
+//        private transient MapState<String, String> stockExchangeMapSell;
+//        private transient MapState<String, String> stockExchangeMapBuy;
         private RandomDataGenerator randomGen = new RandomDataGenerator();
         long start = System.currentTimeMillis();
         long latency = 0;
@@ -120,10 +126,19 @@ public class StockExchange {
 
         @Override
         public void open(Configuration config) {
-            MapStateDescriptor<String, String> descriptor =
-                    new MapStateDescriptor<>("matchmaker", String.class, String.class);
+//            MapStateDescriptor<String, String> descriptor =
+//                    new MapStateDescriptor<>("matchmaker", String.class, String.class);
+//            countMap = getRuntimeContext().getMapState(descriptor);
 
-            countMap = getRuntimeContext().getMapState(descriptor);
+
+//            MapStateDescriptor<String, String> buyDescriptor =
+//                    new MapStateDescriptor<>("matchmaker buy", String.class, String.class);
+//
+//            MapStateDescriptor<String, String> sellDescriptor =
+//                    new MapStateDescriptor<>("matchmaker sale", String.class, String.class);
+
+//            stockExchangeMapBuy = getRuntimeContext().getMapState(buyDescriptor);
+//            stockExchangeMapSell = getRuntimeContext().getMapState(sellDescriptor);
         }
 
         @Override
@@ -131,13 +146,13 @@ public class StockExchange {
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
 
-            delay(5);
+            delay(2);
 
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 return;
             }
 
-            countMap.put(orderArr[Sec_Code], stockOrder);
+//            countMap.put(orderArr[Sec_Code], stockOrder);
 
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
@@ -282,6 +297,8 @@ public class StockExchange {
             for (Map.Entry<String, String> order : matchedSell.entrySet()) {
                 stockExchangeMapSell.remove(order.getKey());
             }
+
+            System.out.println("stockExchangeMapBuy: " + stockExchangeMapBuy.size() + " stockExchangeMapSell: " + stockExchangeMapSell.size());
         }
 
         private void delay(int interval) {
