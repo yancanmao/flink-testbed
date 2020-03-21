@@ -88,7 +88,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>stock.StatefulStockExchange</mainClass>
+                  <mainClass>stock.InAppStatefulStockExchange</mainClass>
                 </transformer>
               </transformers>
             </configuration>
