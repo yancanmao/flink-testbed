@@ -113,8 +113,6 @@ public class StatefulStockExchange {
     public static final class MatchMaker extends RichFlatMapFunction<Tuple3<String, String, Long>, Tuple2<String, String>> {
         private static final long serialVersionUID = 1L;
 
-        //        private Map<String, String> stockExchangeMapSell = new HashMap<>();
-//        private Map<String, String> stockExchangeMapBuy = new HashMap<>();
         private transient MapState<String, String> stockExchangeMapSell;
         private transient MapState<String, String> stockExchangeMapBuy;
         private RandomDataGenerator randomGen = new RandomDataGenerator();
@@ -126,10 +124,6 @@ public class StatefulStockExchange {
 
         @Override
         public void open(Configuration config) {
-//            MapStateDescriptor<String, String> descriptor =
-//                    new MapStateDescriptor<>("matchmaker", String.class, String.class);
-//            countMap = getRuntimeContext().getMapState(descriptor);
-
 
             MapStateDescriptor<String, String> buyDescriptor =
                     new MapStateDescriptor<>("matchmaker buy", String.class, String.class);
@@ -152,30 +146,8 @@ public class StatefulStockExchange {
                 return;
             }
 
-//            countMap.put(orderArr[Sec_Code], stockOrder);
-
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
-//            latency += System.currentTimeMillis() - value.f2;
-//            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
-//            tuples++;
-//            if (System.currentTimeMillis() - start >= 1000) {
-//                start = System.currentTimeMillis();
-//                float avg_latency = (float) latency / tuples;
-//                epoch++;
-//                tuples = 0;
-//                latency = 0;
-//                System.out.println("latency: " + avg_latency + " ts: " + System.nanoTime());
-////                List<String> latency = Arrays.asList(String.valueOf(avg_latency));
-//
-////                Path latencyFile = Paths.get("./latency.log").toAbsolutePath();
-////                try {
-////                    Files.write(latencyFile, latency, Charset.forName("UTF-8"));
-////                } catch (IOException e) {
-////                    System.err.println("Error while writing latency file for epoch " + epoch + ".");
-////                    e.printStackTrace();
-////                }
-//            }
             out.collect(new Tuple2<>(value.f0, value.f1));
         }
 
@@ -197,7 +169,6 @@ public class StatefulStockExchange {
             return matchedResult;
         }
 
-        //        private Map<String, String> tradeSell(String[] sellerOrder, Map<String, String> stockExchangeMap) {
         private Map<String, String> tradeSell(String[] sellerOrder, MapState<String, String> stockExchangeMap) throws Exception {
             Map<String, String> matchedBuy = new HashMap<>();
             Map<String, String> matchedSell = new HashMap<>();

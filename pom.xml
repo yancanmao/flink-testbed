@@ -169,7 +169,8 @@ under the License.
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<!--<mainClass>stock.StockPriceAverage</mainClass>-->
 									<!--<mainClass>stock.StockExchange</mainClass>-->
-									<mainClass>stock.InAppStockExchange</mainClass>
+									<mainClass>stock.StatefulStockExchange</mainClass>
+									<!--<mainClass>stock.InAppStockExchange</mainClass>-->
 									<!--<mainClass>flinkapp.wordcount.StatefulWordCount</mainClass>-->
 								</transformer>
 							</transformers>

@@ -122,7 +122,7 @@ public class StockExchange {
         long latency = 0;
         int tuples = 0;
         int epoch = 0;
-        private transient MapState<String, String> countMap;
+//        private transient MapState<String, String> countMap;
 
         @Override
         public void open(Configuration config) {
@@ -298,7 +298,7 @@ public class StockExchange {
                 stockExchangeMapSell.remove(order.getKey());
             }
 
-            System.out.println("stockExchangeMapBuy: " + stockExchangeMapBuy.size() + " stockExchangeMapSell: " + stockExchangeMapSell.size());
+//            System.out.println("stockExchangeMapBuy: " + stockExchangeMapBuy.size() + " stockExchangeMapSell: " + stockExchangeMapSell.size());
         }
 
         private void delay(int interval) {
