@@ -16,20 +16,21 @@
  * limitations under the License.
  */
 
-package Nexmark.sources;
+package Nexmark.sources.keyed;
 
 import org.apache.beam.sdk.nexmark.NexmarkConfiguration;
 import org.apache.beam.sdk.nexmark.model.Auction;
 import org.apache.beam.sdk.nexmark.sources.generator.GeneratorConfig;
 import org.apache.beam.sdk.nexmark.sources.generator.model.AuctionGenerator;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
 
 import java.util.Random;
 
 /**
  * A ParallelSourceFunction that generates Nexmark Person data
  */
-public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
+public class KeyedAuctionSourceFunction extends RichParallelSourceFunction<Tuple2<Long, Auction>> {
 
     private volatile boolean running = true;
     private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
@@ -37,17 +38,17 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
     private int rate;
     private int cycle = 60;
 
-    public AuctionSourceFunction(int srcRate, int cycle) {
+    public KeyedAuctionSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
         this.cycle = cycle;
     }
 
-    public AuctionSourceFunction(int srcRate) {
+    public KeyedAuctionSourceFunction(int srcRate) {
         this.rate = srcRate;
     }
 
     @Override
-    public void run(SourceContext<Auction> ctx) throws Exception {
+    public void run(SourceContext<Tuple2<Long, Auction>> ctx) throws Exception {
         long streamStartTime = System.currentTimeMillis();
 
         int epoch = 0;
@@ -74,7 +75,7 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
                         config.timestampAndInterEventDelayUsForEvent(
                                 config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                ctx.collect(AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config));
+                ctx.collect(new Tuple2<>(nextId, AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config)));
                 eventsCountSoFar++;
             }
 

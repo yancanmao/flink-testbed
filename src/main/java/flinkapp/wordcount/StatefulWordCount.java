@@ -113,10 +113,8 @@ public class StatefulWordCount {
 
 		@Override
 		public void flatMap(Tuple2<String, String> value, Collector<Tuple2<String, Long>> out) throws Exception {
-			long curTime = System.currentTimeMillis();
-			while (System.currentTimeMillis() - curTime < 1) {}
-
-
+//			long curTime = System.currentTimeMillis();
+//			while (System.currentTimeMillis() - curTime < 1) {}
 
 			// normalize and split the line
 			String[] tokens = value.f1.toLowerCase().split("\\W+");

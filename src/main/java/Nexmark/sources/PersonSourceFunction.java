@@ -37,6 +37,12 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
     private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
     private long eventsCountSoFar = 0;
     private int rate;
+    private int cycle = 60;
+
+    public PersonSourceFunction(int srcRate, int cycle) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+    }
 
     public PersonSourceFunction(int srcRate) {
         this.rate = srcRate;
@@ -46,14 +52,22 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
     public void run(SourceContext<Person> ctx) throws Exception {
         long streamStartTime = System.currentTimeMillis();
 
+        int epoch = 0;
+        int count = 0;
+        int curRate = rate;
+
         while (running && eventsCountSoFar < 40_000_000) {
             long emitStartTime = System.currentTimeMillis();
 
-            if (System.currentTimeMillis() - streamStartTime >= 10000) {
-                changeRate(true, 1000);
+            if (count == 20) {
+                // change input rate every 1 second.
+                epoch++;
+                curRate = Util.changeRateSin(rate, cycle, epoch);
+                System.out.println("epoch: " + epoch%cycle + " current rate is: " + curRate);
+                count = 0;
             }
 
-            for (int i = 0; i < rate; i++) {
+            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
                 long nextId = nextId();
                 Random rnd = new Random(nextId);
 
@@ -67,11 +81,8 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
             }
 
             // Sleep for the rest of timeslice if needed
-            long emitTime = System.currentTimeMillis() - emitStartTime;
-            if (emitTime < 1000) {
-                Thread.sleep(1000 - emitTime);
-            }
-
+            Util.pause(emitStartTime);
+            count++;
         }
     }
 
@@ -82,15 +93,5 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
 
     private long nextId() {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
-    }
-
-    private void changeRate(Boolean inc, Integer n) {
-        if (inc) {
-            rate += n;
-        } else {
-            if (rate > n) {
-                rate -= n;
-            }
-        }
     }
 }

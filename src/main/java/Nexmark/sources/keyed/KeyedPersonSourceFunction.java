@@ -16,45 +16,48 @@
  * limitations under the License.
  */
 
-package Nexmark.sources;
+package Nexmark.sources.keyed;
 
 import org.apache.beam.sdk.nexmark.NexmarkConfiguration;
-import org.apache.beam.sdk.nexmark.model.Auction;
+import org.apache.beam.sdk.nexmark.model.Person;
 import org.apache.beam.sdk.nexmark.sources.generator.GeneratorConfig;
-import org.apache.beam.sdk.nexmark.sources.generator.model.AuctionGenerator;
+import org.apache.beam.sdk.nexmark.sources.generator.model.PersonGenerator;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
 
 import java.util.Random;
+
+;
 
 /**
  * A ParallelSourceFunction that generates Nexmark Person data
  */
-public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
+public class KeyedPersonSourceFunction extends RichParallelSourceFunction<Tuple2<Long, Person>> {
 
     private volatile boolean running = true;
     private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
     private long eventsCountSoFar = 0;
     private int rate;
-    private int cycle = 60;
+    private int cycle;
 
-    public AuctionSourceFunction(int srcRate, int cycle) {
+    public KeyedPersonSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
         this.cycle = cycle;
     }
 
-    public AuctionSourceFunction(int srcRate) {
+    public KeyedPersonSourceFunction(int srcRate) {
         this.rate = srcRate;
     }
 
     @Override
-    public void run(SourceContext<Auction> ctx) throws Exception {
+    public void run(SourceContext<Tuple2<Long, Person>> ctx) throws Exception {
         long streamStartTime = System.currentTimeMillis();
 
         int epoch = 0;
         int count = 0;
         int curRate = rate;
 
-        while (running && eventsCountSoFar < 70_000_000) {
+        while (running && eventsCountSoFar < 40_000_000) {
             long emitStartTime = System.currentTimeMillis();
 
             if (count == 20) {
@@ -74,7 +77,7 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
                         config.timestampAndInterEventDelayUsForEvent(
                                 config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                ctx.collect(AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config));
+                ctx.collect(new Tuple2<>(nextId, PersonGenerator.nextPerson(nextId, rnd, eventTimestamp, config)));
                 eventsCountSoFar++;
             }
 
