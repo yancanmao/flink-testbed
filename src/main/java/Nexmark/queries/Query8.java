@@ -58,7 +58,7 @@ public class Query8 {
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 //        new MemoryStateBackend(1024 * 1024 * 1024, false);
-        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
+//        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 //        env.setStateBackend(new FsStateBackend("hdfs://camel:9000/flink/checkpoints"));
 
 //        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
@@ -74,21 +74,25 @@ public class Query8 {
 
         final int auctionSrcRate = params.getInt("auction-srcRate", 100000);
         final int auctionSrcCycle = params.getInt("auction-srcCycle", 60);
+        final int auctionSrcBase = params.getInt("auction-srcBase", 0);
 
         final int personSrcRate = params.getInt("person-srcRate", 100000);
         final int personSrcCycle = params.getInt("person-srcCycle", 60);
+        final int personSrcBase = params.getInt("person-srcBase", 0);
 
         env.setParallelism(params.getInt("p-window", 1));
 
-        DataStream<Person> persons = env.addSource(new PersonSourceFunction(personSrcRate, personSrcCycle))
+        DataStream<Auction> auctions = env.addSource(new AuctionSourceFunction(auctionSrcRate, auctionSrcCycle, auctionSrcBase))
+                .name("Custom Source: Auctions")
+                .setParallelism(params.getInt("p-auction-source", 1));
+//                .assignTimestampsAndWatermarks(new AuctionTimestampAssigner());
+
+        DataStream<Person> persons = env.addSource(new PersonSourceFunction(personSrcRate, personSrcCycle, personSrcBase))
                 .name("Custom Source: Persons")
                 .setParallelism(params.getInt("p-person-source", 1));
 //                .assignTimestampsAndWatermarks(new PersonTimestampAssigner());
 
-        DataStream<Auction> auctions = env.addSource(new AuctionSourceFunction(auctionSrcRate, auctionSrcCycle))
-                .name("Custom Source: Auctions")
-                .setParallelism(params.getInt("p-auction-source", 1));
-//                .assignTimestampsAndWatermarks(new AuctionTimestampAssigner());
+
 
         // SELECT Rstream(P.id, P.name, A.reserve)
         // FROM Person [RANGE 1 HOUR] P, Auction [RANGE 1 HOUR] A

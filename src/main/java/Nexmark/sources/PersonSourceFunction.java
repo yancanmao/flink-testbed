@@ -38,10 +38,17 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
     private long eventsCountSoFar = 0;
     private int rate;
     private int cycle = 60;
+    private int base = 0;
 
     public PersonSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
         this.cycle = cycle;
+    }
+
+    public PersonSourceFunction(int srcRate, int cycle, int base) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
     }
 
     public PersonSourceFunction(int srcRate) {
@@ -56,13 +63,16 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
         int count = 0;
         int curRate = rate;
 
-        while (running && eventsCountSoFar < 40_000_000) {
+        // warm up
+        Thread.sleep(100000);
+
+        while (running) {
             long emitStartTime = System.currentTimeMillis();
 
             if (count == 20) {
                 // change input rate every 1 second.
                 epoch++;
-                curRate = Util.changeRateSin(rate, cycle, epoch);
+                curRate = base + Util.changeRateSin(rate, cycle, epoch);
                 System.out.println("epoch: " + epoch%cycle + " current rate is: " + curRate);
                 count = 0;
             }
