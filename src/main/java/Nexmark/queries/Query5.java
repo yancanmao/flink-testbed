@@ -24,10 +24,14 @@ import org.apache.beam.sdk.nexmark.model.Bid;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
@@ -49,6 +53,9 @@ public class Query5 {
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        env.setStateBackend(new MemoryStateBackend(100000000));
+
+
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.getConfig().setAutoWatermarkInterval(1000);
 
@@ -69,10 +76,16 @@ public class Query5 {
             public Long getKey(Bid bid) throws Exception {
                 return bid.auction;
             }
-        }).timeWindow(Time.minutes(60), Time.minutes(1))
+        }).timeWindow(Time.seconds(60), Time.seconds(1))
                 .aggregate(new CountBids())
                 .name("Sliding Window")
                 .setParallelism(params.getInt("p-window", 1));
+
+
+        ((SingleOutputStreamOperator<Tuple2<Long, Long>>) windowed).disableChaining();
+        ((SingleOutputStreamOperator<Tuple2<Long, Long>>) windowed).setMaxParallelism(params.getInt("mp2", 64));
+        ((SingleOutputStreamOperator<Tuple2<Long, Long>>) windowed).setParallelism(params.getInt("p2",  1));
+        ((SingleOutputStreamOperator<Tuple2<Long, Long>>) windowed).name("window");
 
         GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
         windowed.transform("DummyLatencySink", objectTypeInfo, new DummyLatencyCountingSink<>(logger))
