@@ -78,8 +78,9 @@ RATE=0
 #BASE=10000
 CYCLE=60
 N=1
+BASE=100000
 
-for BASE in 100000 150000 200000; do
+for RATE in 100000 150000 200000; do
     EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${l}l${l}
 
     cleanEnv
@@ -93,4 +94,5 @@ for BASE in 100000 150000 200000; do
     draw
     closeFlink
 
+    python -c 'import time; time.sleep(30)'
 done
