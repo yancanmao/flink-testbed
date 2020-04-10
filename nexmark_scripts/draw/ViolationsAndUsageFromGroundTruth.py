@@ -247,17 +247,30 @@ if (True):
 
 avgViolationPercentage = totalViolation / float(totalTime)
 sumDeviation = 0.0
-print('avg success rate=', 1 - avgViolationPercentage)
-print('total violation number=' + str(totalViolation))
-violationNotPeak = totalViolation
-timeNotPeak = totalTime
-if (totalViolation > 0):
-    for peakI in range(0, len(peakIntervals)):
-        print('violation percentage in peak ' + str(peakI) + ' is ' + str(
-            violationInPeak[peakI] / float(totalViolation)) + ', number is ' + str(violationInPeak[peakI]))
-        violationNotPeak -= violationInPeak[peakI]
-        timeNotPeak -= totalInPeak[peakI]
-print('Execept peak avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
+
+stats_logs_path = outputDir + 'groudtruth_stats'
+with open(stats_logs_path, 'w+') as f:
+
+    print('avg success rate=', 1 - avgViolationPercentage)
+    print('total violation number=' + str(totalViolation))
+
+    print >> f, ('avg success rate=', 1 - avgViolationPercentage)
+    print >> f, ('total violation number=' + str(totalViolation))
+
+    violationNotPeak = totalViolation
+    timeNotPeak = totalTime
+    if (totalViolation > 0):
+        for peakI in range(0, len(peakIntervals)):
+            print('violation percentage in peak ' + str(peakI) + ' is ' + str(
+                violationInPeak[peakI] / float(totalViolation)) + ', number is ' + str(violationInPeak[peakI]))
+            violationNotPeak -= violationInPeak[peakI]
+
+            print >> f, ('violation percentage in peak ' + str(peakI) + ' is ' + str(
+                violationInPeak[peakI] / float(totalViolation)) + ', number is ' + str(violationInPeak[peakI]))
+
+            timeNotPeak -= totalInPeak[peakI]
+    print('Execept peak avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
+    print >> f, ('Execept peak avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
 
 # Calculate avg latency
 if (False):

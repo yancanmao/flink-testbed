@@ -533,6 +533,12 @@ for i in range(0, len(decision)):
             numScaleIn += 1
 print("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
 
+# save stats to file
+stats_logs_path = output_path + 'model_stats'
+with open(stats_logs_path, 'w+') as f:
+    print >> f, ("Avg number of OEs=" + str(avgOEs))
+    print >> f, ("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
+
 #Draw total arrival rate
 print("Draw total arrival rate")
 arrivalRate = []
