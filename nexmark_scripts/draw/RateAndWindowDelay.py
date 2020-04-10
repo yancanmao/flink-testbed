@@ -20,7 +20,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 
 jobname = sys.argv[1]
-input_file = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/flink-samza-standalonesession-0-camel-sane.out'
+input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = '/home/samza/workspace/newGT/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = '/home/samza/workspace/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = 'GroundTruth/stdout'

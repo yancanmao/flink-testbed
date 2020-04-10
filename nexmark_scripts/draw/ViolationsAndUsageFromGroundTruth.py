@@ -29,8 +29,8 @@ calculateInterval = [0, 860]  # The interval we calculate violation percentage f
 substreamAvgLatency = {}  # Dict { substreamId : [[Arrival, Completed]...]}
 
 figureName = sys.argv[1]
-# inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
-inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
+inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
+# inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 
 keyAverageLatencyFlag = True

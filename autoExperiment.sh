@@ -26,8 +26,9 @@ function configFlink() {
 
 # run flink clsuter
 function runFlink() {
-    mkdir log
-    $FLINK_DIR/bin/start-cluster.sh
+    rm -rf ${FLINK_DIR}/log
+    mkdir ${FLINK_DIR}/log
+    ${FLINK_DIR}/bin/start-cluster.sh
 }
 
 # run applications
@@ -68,8 +69,9 @@ l=10
 
 QUERY=5
 BASE=10000
-RATE=50000
+RATE=25000
 CYCLE=60
+
 N=1
 
 EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${l}l${l}
