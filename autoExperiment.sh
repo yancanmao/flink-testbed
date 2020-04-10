@@ -26,7 +26,9 @@ function configFlink() {
 
 # run flink clsuter
 function runFlink() {
-    rm -rf ${FLINK_DIR}/log
+    if [[ -d ${FLINK_DIR}/log ]]; then
+        rm -rf ${FLINK_DIR}/log
+    fi
     mkdir ${FLINK_DIR}/log
     ${FLINK_DIR}/bin/start-cluster.sh
 }
@@ -40,6 +42,9 @@ function runApp() {
 function closeFlink() {
     echo "experiment finished closing it"
     ${FLINK_DIR}/bin/stop-cluster.sh
+    if [[ -d ${FLINK_APP_DIR}/nexmark_scripts/draw/logs/${EXP_NAME} ]]; then
+        rm -rf ${FLINK_APP_DIR}/nexmark_scripts/draw/logs/${EXP_NAME}
+    fi
     mv ${FLINK_DIR}/log ${FLINK_APP_DIR}/nexmark_scripts/draw/logs/${EXP_NAME}
     echo "close finished"
 }
