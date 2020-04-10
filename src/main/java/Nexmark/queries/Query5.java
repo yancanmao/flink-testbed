@@ -63,8 +63,10 @@ public class Query5 {
         env.getConfig().setLatencyTrackingInterval(5000);
 
         final int srcRate = params.getInt("srcRate", 100000);
+        final int srcCycle = params.getInt("srcCycle", 60);
+        final int srcBase = params.getInt("srcBase", 0);
 
-        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate))
+        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase))
                 .setParallelism(params.getInt("p-bid-source", 1))
                 .assignTimestampsAndWatermarks(new TimestampAssigner());
 
@@ -76,7 +78,7 @@ public class Query5 {
             public Long getKey(Bid bid) throws Exception {
                 return bid.auction;
             }
-        }).timeWindow(Time.seconds(60), Time.seconds(1))
+        }).timeWindow(Time.seconds(10), Time.seconds(1))
                 .aggregate(new CountBids())
                 .name("Sliding Window")
                 .setParallelism(params.getInt("p-window", 1));

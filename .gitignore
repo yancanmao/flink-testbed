@@ -20,3 +20,7 @@ state
 .attach*
 hs*
 rates/
+figures/
+*.log
+*.png
+*.out
