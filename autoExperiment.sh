@@ -94,5 +94,5 @@ for RATE in 100000 150000 200000; do
     draw
     closeFlink
 
-    python -c 'import time; time.sleep(30)'
+#    python -c 'import time; time.sleep(30)'
 done
