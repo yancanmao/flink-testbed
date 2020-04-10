@@ -39,6 +39,7 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
     private int rate;
     private int cycle = 60;
     private int base = 0;
+    private int warmUpInterval = 100000;
 
     public PersonSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
@@ -49,6 +50,13 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
         this.rate = srcRate;
         this.cycle = cycle;
         this.base = base;
+    }
+
+    public PersonSourceFunction(int srcRate, int cycle, int base, int warmUpInterval) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
+        this.warmUpInterval = warmUpInterval;
     }
 
     public PersonSourceFunction(int srcRate) {
@@ -64,7 +72,8 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
         int curRate = rate;
 
         // warm up
-        Thread.sleep(100000);
+        Thread.sleep(60000);
+        warmup(ctx);
 
         while (running) {
             long emitStartTime = System.currentTimeMillis();
@@ -93,6 +102,29 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
             // Sleep for the rest of timeslice if needed
             Util.pause(emitStartTime);
             count++;
+        }
+    }
+
+    private void warmup(SourceContext<Person> ctx) throws InterruptedException {
+        int curRate = rate + base; //  (sin0 + 1) * rate + base
+        long startTs = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTs < warmUpInterval) {
+            long emitStartTime = System.currentTimeMillis();
+            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
+                long nextId = nextId();
+                Random rnd = new Random(nextId);
+
+                // When, in event time, we should generate the event. Monotonic.
+                long eventTimestamp =
+                        config.timestampAndInterEventDelayUsForEvent(
+                                config.nextEventNumber(eventsCountSoFar)).getKey();
+
+                ctx.collect(PersonGenerator.nextPerson(nextId, rnd, eventTimestamp, config));
+                eventsCountSoFar++;
+            }
+
+            // Sleep for the rest of timeslice if needed
+            Util.pause(emitStartTime);
         }
     }
 

@@ -37,6 +37,7 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
     private int rate;
     private int cycle = 60;
     private int base = 0;
+    private int warmUpInterval = 100000;
 
     public AuctionSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
@@ -47,6 +48,13 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
         this.rate = srcRate;
         this.cycle = cycle;
         this.base = base;
+    }
+
+    public AuctionSourceFunction(int srcRate, int cycle, int base, int warmUpInterval) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
+        this.warmUpInterval = warmUpInterval;
     }
 
     public AuctionSourceFunction(int srcRate) {
@@ -62,7 +70,8 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
         int curRate = rate;
 
         // warm up
-        Thread.sleep(100000);
+        Thread.sleep(60000);
+        warmup(ctx);
 
         while (running) {
             long emitStartTime = System.currentTimeMillis();
@@ -91,6 +100,29 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
             // Sleep for the rest of timeslice if needed
             Util.pause(emitStartTime);
             count++;
+        }
+    }
+
+    private void warmup(SourceContext<Auction> ctx) throws InterruptedException {
+        int curRate = rate + base; //  (sin0 + 1) * rate + base
+        long startTs = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTs < warmUpInterval) {
+            long emitStartTime = System.currentTimeMillis();
+            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
+                long nextId = nextId();
+                Random rnd = new Random(nextId);
+
+                // When, in event time, we should generate the event. Monotonic.
+                long eventTimestamp =
+                        config.timestampAndInterEventDelayUsForEvent(
+                                config.nextEventNumber(eventsCountSoFar)).getKey();
+
+                ctx.collect(AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config));
+                eventsCountSoFar++;
+            }
+
+            // Sleep for the rest of timeslice if needed
+            Util.pause(emitStartTime);
         }
     }
 

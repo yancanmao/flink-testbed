@@ -37,6 +37,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
     private int rate;
     private int cycle = 60;
     private int base = 0;
+    private int warmUpInterval = 100000;
 
     public BidSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
@@ -47,6 +48,13 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         this.rate = srcRate;
         this.cycle = cycle;
         this.base = base;
+    }
+
+    public BidSourceFunction(int srcRate, int cycle, int base, int warmUpInterval) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
+        this.warmUpInterval = warmUpInterval;
     }
 
     public BidSourceFunction(int srcRate) {
@@ -61,7 +69,8 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         int curRate = rate;
 
         // warm up
-        Thread.sleep(100000);
+        Thread.sleep(60000);
+        warmup(ctx);
 
         while (running) {
             long emitStartTime = System.currentTimeMillis();
@@ -91,6 +100,30 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
             // Sleep for the rest of timeslice if needed
             Util.pause(emitStartTime);
             count++;
+        }
+    }
+
+    private void warmup(SourceContext<Bid> ctx) throws InterruptedException {
+        int curRate = rate + base; //  (sin0 + 1)
+        long startTs = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTs < warmUpInterval) {
+            long emitStartTime = System.currentTimeMillis();
+            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
+
+                long nextId = nextId();
+                Random rnd = new Random(nextId);
+
+                // When, in event time, we should generate the event. Monotonic.
+                long eventTimestamp =
+                        config.timestampAndInterEventDelayUsForEvent(
+                                config.nextEventNumber(eventsCountSoFar)).getKey();
+
+                ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
+                eventsCountSoFar++;
+            }
+
+            // Sleep for the rest of timeslice if needed
+            Util.pause(emitStartTime);
         }
     }
 

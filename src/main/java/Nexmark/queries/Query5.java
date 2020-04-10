@@ -65,8 +65,9 @@ public class Query5 {
         final int srcRate = params.getInt("srcRate", 100000);
         final int srcCycle = params.getInt("srcCycle", 60);
         final int srcBase = params.getInt("srcBase", 0);
+        final int srcWarnUp = params.getInt("srcWarnUp", 100);
 
-        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase))
+        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase, srcWarnUp*1000))
                 .setParallelism(params.getInt("p-bid-source", 1))
                 .assignTimestampsAndWatermarks(new TimestampAssigner());
 
