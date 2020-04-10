@@ -73,23 +73,24 @@ L=1000
 l=10
 
 QUERY=5
-BASE=10000
-RATE=25000
-CYCLE=60
 
+RATE=0
+#BASE=10000
+CYCLE=60
 N=1
 
-EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${l}l${l}
+for BASE in 100000 150000 200000; do
+    EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${l}l${l}
 
-cleanEnv
-configFlink
-runFlink
-runApp
+    cleanEnv
+    configFlink
+    runFlink
+    runApp
 
-python -c 'import time; time.sleep(600)'
+    python -c 'import time; time.sleep(600)'
 
-# draw figure
-draw
+    # draw figure
+    draw
+    closeFlink
 
-closeFlink
-
+done
