@@ -20,12 +20,14 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 
 jobname = sys.argv[1]
+warmup = sys.argv[2]
+runtime = sys.argv[3]
 input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = '/home/samza/workspace/newGT/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = '/home/samza/workspace/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
-xaxes = [0000, 500]
+xaxes = [0, runtime]
 maxOEs = 10
 
 executorsFigureFlag = True
@@ -534,7 +536,7 @@ for i in range(0, len(decision)):
 print("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
 
 # save stats to file
-stats_logs_path = output_path + 'model_stats'
+stats_logs_path = output_path + 'model_stats.txt'
 with open(stats_logs_path, 'w+') as f:
     print >> f, ("Avg number of OEs=" + str(avgOEs))
     print >> f, ("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)

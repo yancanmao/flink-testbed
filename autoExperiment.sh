@@ -35,7 +35,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} 0
+    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} 0
 }
 
 # clsoe flink clsuter
@@ -51,8 +51,8 @@ function closeFlink() {
 
 # draw figures
 function draw() {
-    python2 ${FLINK_APP_DIR}/nexmark_scripts/draw/RateAndWindowDelay.py ${EXP_NAME}
-    python2 ${FLINK_APP_DIR}/nexmark_scripts/draw/ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
+    python2 ${FLINK_APP_DIR}/nexmark_scripts/draw/RateAndWindowDelay.py ${EXP_NAME} ${WARMUP} ${RUNTIME}
+    python2 ${FLINK_APP_DIR}/nexmark_scripts/draw/ViolationsAndUsageFromGroundTruth.py ${EXP_NAME} ${WARMUP} ${RUNTIME}
 }
 
 #for L in 1000 4000 16000; do
@@ -80,6 +80,8 @@ CYCLE=60
 N=1
 BASE=100000
 RATE=100000
+WARMUP=100
+RUNTIME=600
 
 for CYCLE in 30 60 120; do
     EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}l${l}
@@ -89,7 +91,7 @@ for CYCLE in 30 60 120; do
     runFlink
     runApp
 
-    python -c 'import time; time.sleep(600)'
+    python -c 'import time; time.sleep('"${RUNTIME}"')'
 
     # draw figure
     draw

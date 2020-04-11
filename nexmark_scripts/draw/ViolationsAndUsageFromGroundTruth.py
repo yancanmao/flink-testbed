@@ -20,15 +20,18 @@ plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
+figureName = sys.argv[1]
+warmup = sys.argv[2]
+runtime = sys.argv[3]
+
 userLatency = 1000
 userWindow = 1000
 base = 1000  # timeslot size
-peakIntervals = [[0, 200], [7200, 7290]]
-calculateInterval = [0, 860]  # The interval we calculate violation percentage from 1st tuple completed
+warmUpIntervals = [[0, warmup]]
+calculateInterval = [0, runtime]  # The interval we calculate violation percentage from 1st tuple completed
 # totalLength = 7100
 substreamAvgLatency = {}  # Dict { substreamId : [[Arrival, Completed]...]}
 
-figureName = sys.argv[1]
 inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
@@ -41,14 +44,14 @@ calibrateFlag = False
 startTime = sys.maxint
 totalTime = 0
 totalViolation = 0
-violationInPeak = []
+violationInWarmUp = []
 totalInPeak = []
 
 # Translate time from second to user window index
-for peakI in range(0, len(peakIntervals)):
-    violationInPeak += [0]
+for peakI in range(0, len(warmUpIntervals)):
+    violationInWarmUp += [0]
     totalInPeak += [0]
-    peakIntervals[peakI] = [peakIntervals[peakI][0] * base / userWindow, peakIntervals[peakI][1] * base / userWindow]
+    warmUpIntervals[peakI] = [warmUpIntervals[peakI][0] * base / userWindow, warmUpIntervals[peakI][1] * base / userWindow]
 xaxes = [calculateInterval[0] * 1000 / userWindow, calculateInterval[-1] * 1000 / userWindow]
 
 maxMigrationTime = 0
@@ -122,8 +125,8 @@ for substream in sorted(substreamAvgLatency):
 
     # the total time interval for violation calculation
     thisTime = (xaxes[1] - xaxes[0] + 1)
-    for peak in range(0, len(peakIntervals)):
-        totalInPeak[peak] += (peakIntervals[peak][1] - peakIntervals[peak][0] + 1)
+    for peak in range(0, len(warmUpIntervals)):
+        totalInPeak[peak] += (warmUpIntervals[peak][1] - warmUpIntervals[peak][0] + 1)
 
     # already be avg latency, just need to form the x and y
     thisViolation = 0
@@ -145,9 +148,9 @@ for substream in sorted(substreamAvgLatency):
             else:
                 thisViolationInterval.append([time, time])
         # Calculate peak interval
-        for i in range(0, len(peakIntervals)):
-            if peakIntervals[i][0] <= time <= peakIntervals[i][1] and avgLatency > userLatency:
-                violationInPeak[i] += 1
+        for i in range(0, len(warmUpIntervals)):
+            if warmUpIntervals[i][0] <= time <= warmUpIntervals[i][1] and avgLatency > userLatency:
+                violationInWarmUp[i] += 1
 
     substreamTime += [thisTime]
     substreamViolation += [thisViolation]
@@ -248,7 +251,7 @@ if (True):
 avgViolationPercentage = totalViolation / float(totalTime)
 sumDeviation = 0.0
 
-stats_logs_path = outputDir + 'groudtruth_stats'
+stats_logs_path = outputDir + 'groudtruth_stats.txt'
 with open(stats_logs_path, 'w+') as f:
 
     print('avg success rate=', 1 - avgViolationPercentage)
@@ -260,17 +263,17 @@ with open(stats_logs_path, 'w+') as f:
     violationNotPeak = totalViolation
     timeNotPeak = totalTime
     if (totalViolation > 0):
-        for peakI in range(0, len(peakIntervals)):
-            print('violation percentage in peak ' + str(peakI) + ' is ' + str(
-                violationInPeak[peakI] / float(totalViolation)) + ', number is ' + str(violationInPeak[peakI]))
-            violationNotPeak -= violationInPeak[peakI]
+        for peakI in range(0, len(warmUpIntervals)):
+            print('violation percentage in warm up ' + str(peakI) + ' is ' + str(
+                violationInWarmUp[peakI] / float(totalViolation)) + ', number is ' + str(violationInWarmUp[peakI]))
+            violationNotPeak -= violationInWarmUp[peakI]
 
-            print >> f, ('violation percentage in peak ' + str(peakI) + ' is ' + str(
-                violationInPeak[peakI] / float(totalViolation)) + ', number is ' + str(violationInPeak[peakI]))
+            print >> f, ('violation percentage in warm up ' + str(peakI) + ' is ' + str(
+                violationInWarmUp[peakI] / float(totalViolation)) + ', number is ' + str(violationInWarmUp[peakI]))
 
             timeNotPeak -= totalInPeak[peakI]
-    print('Execept peak avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
-    print >> f, ('Execept peak avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
+    print('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
+    print >> f, ('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
 
 # Calculate avg latency
 if (False):
