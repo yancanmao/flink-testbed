@@ -19,16 +19,13 @@
 package Nexmark.queries;
 
 import Nexmark.sinks.DummyLatencyCountingSink;
-import Nexmark.sources.BidSourceFunction;
 import Nexmark.sources.keyed.KeyedBidSourceFunction;
 import org.apache.beam.sdk.nexmark.model.Bid;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -42,9 +39,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-public class Query5 {
+public class Query5Keyed {
 
-    private static final Logger logger  = LoggerFactory.getLogger(Query5.class);
+    private static final Logger logger  = LoggerFactory.getLogger(Query5Keyed.class);
 
     public static void main(String[] args) throws Exception {
 
