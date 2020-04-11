@@ -252,7 +252,7 @@ with open(input_file) as f:
                 decision += [0]
 
         if (split[0] == 'Number' and split[2] == 'severe'):
-            time = int(lines[i-1].split(' ')[2])
+            time = int(lines[i-1].split(' ')[2]) - warmup*10
             numberOfSevereT += [time]
             numberOfSevere += [int(split[4])]
 
