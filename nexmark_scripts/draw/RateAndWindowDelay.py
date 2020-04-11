@@ -27,7 +27,7 @@ input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-
 # input_file = '/home/samza/workspace/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
-xaxes = [0, runtime]
+xaxes = [-warmup, runtime]
 maxOEs = 10
 
 executorsFigureFlag = True
@@ -92,10 +92,10 @@ def parseContainerArrivalRate(split, base):
                 containerArrivalRate[Id] = []
                 containerArrivalRateT[Id] = []
             containerArrivalRate[Id] += [float(value)* 1000]
-            containerArrivalRateT[Id] += [(long(time) - initialTime)/base]
-            if( (long(time) - initialTime)/base not in totalArrivalRate):
-                totalArrivalRate[(long(time) - initialTime)/base] = 0.0
-            totalArrivalRate[(long(time) - initialTime)/base] += float(value) * 1000
+            containerArrivalRateT[Id] += [(long(time) - initialTime)/base - warmup*10]
+            if( (long(time) - initialTime)/base - warmup*10 not in totalArrivalRate):
+                totalArrivalRate[(long(time) - initialTime)/base - warmup*10] = 0.0
+            totalArrivalRate[(long(time) - initialTime)/base - warmup*10] += float(value) * 1000
 
 def parseContainerServiceRate(split, base):
     global initialTime
@@ -117,7 +117,7 @@ def parseContainerServiceRate(split, base):
                 containerServiceRate[Id] = []
                 containerServiceRateT[Id] = []
             containerServiceRate[Id] += [float(value)* 1000]
-            containerServiceRateT[Id] += [(long(time) - initialTime)/base]
+            containerServiceRateT[Id] += [(long(time) - initialTime)/base - warmup*10]
 
 def parseContainerWindowDelay(split, base):
     global initialTime, overallWindowDelayT, overallWindowDelay
@@ -138,10 +138,10 @@ def parseContainerWindowDelay(split, base):
                 containerWindowDelay[Id] = []
                 containerWindowDelayT[Id] = []
             containerWindowDelay[Id] += [float(value)]
-            containerWindowDelayT[Id] += [(long(time) - initialTime)/base]
+            containerWindowDelayT[Id] += [(long(time) - initialTime)/base - warmup*10]
 
-            if(len(overallWindowDelayT) == 0 or overallWindowDelayT[-1] < (long(time) - initialTime)/base):
-                overallWindowDelayT += [(long(time) - initialTime)/base]
+            if(len(overallWindowDelayT) == 0 or overallWindowDelayT[-1] < (long(time) - initialTime)/base - warmup*10):
+                overallWindowDelayT += [(long(time) - initialTime)/base - warmup*10]
                 overallWindowDelay += [float(value)]
             elif(overallWindowDelay[-1] < float(value)):
                 overallWindowDelay[-1] = float(value)
@@ -168,7 +168,7 @@ def parseContainerLongtermDelay(split, base):
             if(value>1000000): value = 1000000
             elif(value<0): value = 0
             containerLongtermDelay[Id] += [float(value)]
-            containerLongtermDelayT[Id] += [(long(time) - initialTime)/base]
+            containerLongtermDelayT[Id] += [(long(time) - initialTime)/base - warmup*10]
 
 def readContainerRealWindowDelay(Id):
     global initialTime, overallWindowDelayT, overallWindowDelay, overallRealWindowDelayT, overallRealWindowDelay, userWindowSize
@@ -190,7 +190,7 @@ def readContainerRealWindowDelay(Id):
                 partition = split[0]
                 processed += 1
                 time = split[2]
-                time = (long(time) - initialTime)/base
+                time = (long(time) - initialTime)/base - warmup*10
                 queue += [[time, float(split[1])]]
                 total += float(split[1])
                 while(queue[0][0] < time - userWindowSize):
@@ -234,7 +234,7 @@ with open(input_file) as f:
             j = split.index("time:")
             src = split[j+4]
             tgt = split[j+7].rstrip()
-            time = (long(split[j+1]) - initialTime)/base
+            time = (long(split[j+1]) - initialTime)/base - warmup*10
             if(src not in migrationDecisionTime):
                 migrationDecisionTime[src] = []
             migrationDecisionTime[src] += [time]
@@ -261,7 +261,7 @@ with open(input_file) as f:
             src = split[i+1]
             tgt = split[i+3].rstrip()
             print('Migration complete from ' + src + ' to ' + tgt)
-            time = (long(split[4]) - initialTime)/base
+            time = (long(split[4]) - initialTime)/base - warmup*10
             if(src not in migrationDeployTime):
                 migrationDeployTime[src] = []
             migrationDeployTime[src] += [time]
