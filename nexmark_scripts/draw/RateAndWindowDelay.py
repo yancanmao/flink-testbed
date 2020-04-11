@@ -27,7 +27,7 @@ input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-
 # input_file = '/home/samza/workspace/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
-xaxes = [-warmup, runtime]
+xaxes = [-warmup, runtime-warmup]
 maxOEs = 10
 
 executorsFigureFlag = True

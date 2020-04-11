@@ -27,8 +27,8 @@ runtime = int(sys.argv[3])
 userLatency = 1000
 userWindow = 1000
 base = 1000  # timeslot size
-warmUpIntervals = [[0, warmup]]
-calculateInterval = [0, runtime]  # The interval we calculate violation percentage from 1st tuple completed
+warmUpIntervals = [[-warmup, 0]]
+calculateInterval = [-warmup, runtime-warmup]  # The interval we calculate violation percentage from 1st tuple completed
 # totalLength = 7100
 substreamAvgLatency = {}  # Dict { substreamId : [[Arrival, Completed]...]}
 
@@ -85,7 +85,7 @@ for fileName in listdir(inputDir):
                     if keygroup not in substreamAvgLatency:
                         substreamAvgLatency[keygroup] = {}
                     else:
-                        alignedTimeslot = (timeslot - startTime) / 1000
+                        alignedTimeslot = (timeslot - startTime) / 1000 - warmup
                         if alignedTimeslot in substreamAvgLatency[keygroup]:
                             print("+++++++ Ground truth error, check whether it is buggy")
                         substreamAvgLatency[keygroup][alignedTimeslot] = avgLatency
