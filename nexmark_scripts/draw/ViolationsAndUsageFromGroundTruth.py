@@ -21,8 +21,8 @@ plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 figureName = sys.argv[1]
-warmup = sys.argv[2]
-runtime = sys.argv[3]
+warmup = int(sys.argv[2])
+runtime = int(sys.argv[3])
 
 userLatency = 1000
 userWindow = 1000
