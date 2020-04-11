@@ -26,6 +26,8 @@ import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunctio
 
 import java.util.Random;
 
+import static java.lang.Thread.sleep;
+
 /**
  * A ParallelSourceFunction that generates Nexmark Bid data
  */
@@ -38,6 +40,8 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
     private int cycle = 60;
     private int base = 0;
     private int warmUpInterval = 100000;
+    long streamStartTime = System.currentTimeMillis();
+    int sleepCnt = 0;
 
     public BidSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
@@ -63,7 +67,6 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
 
     @Override
     public void run(SourceContext<Bid> ctx) throws Exception {
-        long streamStartTime = System.currentTimeMillis();
         int epoch = 0;
         int count = 0;
         int curRate = rate;
@@ -98,7 +101,12 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
             }
 
             // Sleep for the rest of timeslice if needed
-            Util.pause(emitStartTime);
+//            Util.pause(emitStartTime);
+            sleepCnt++;
+            long cur = System.currentTimeMillis();
+            if (cur < sleepCnt*50 + streamStartTime) {
+                sleep((sleepCnt*50 + streamStartTime) - cur);
+            }
             count++;
         }
     }
@@ -107,7 +115,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         int curRate = rate + base; //  (sin0 + 1)
         long startTs = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTs < warmUpInterval) {
-            long emitStartTime = System.currentTimeMillis();
+//            long emitStartTime = System.currentTimeMillis();
             for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
 
                 long nextId = nextId();
@@ -123,7 +131,12 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
             }
 
             // Sleep for the rest of timeslice if needed
-            Util.pause(emitStartTime);
+//            Util.pause(streamStartTime);
+            sleepCnt++;
+            long cur = System.currentTimeMillis();
+            if (cur < sleepCnt*50 + streamStartTime) {
+                sleep((sleepCnt*50 + streamStartTime) - cur);
+            }
         }
     }
 
