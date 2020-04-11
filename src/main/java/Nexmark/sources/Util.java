@@ -29,8 +29,8 @@ public class Util {
 
     public static void pause(long emitStartTime) throws InterruptedException {
         long emitTime = System.currentTimeMillis() - emitStartTime;
-        if (emitTime < 1000/20) {
-            Thread.sleep(1000/20 - emitTime);
+        if (emitTime < 1000/50) {
+            Thread.sleep(1000/50 - emitTime);
         }
     }
 }
