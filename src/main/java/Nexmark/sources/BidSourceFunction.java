@@ -26,8 +26,6 @@ import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunctio
 
 import java.util.Random;
 
-import static java.lang.Thread.sleep;
-
 /**
  * A ParallelSourceFunction that generates Nexmark Bid data
  */
@@ -40,8 +38,6 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
     private int cycle = 60;
     private int base = 0;
     private int warmUpInterval = 100000;
-    long streamStartTime = System.currentTimeMillis();
-    int sleepCnt = 0;
 
     public BidSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
@@ -67,47 +63,65 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
 
     @Override
     public void run(SourceContext<Bid> ctx) throws Exception {
+        long streamStartTime = System.currentTimeMillis();
         int epoch = 0;
         int count = 0;
         int curRate = rate;
 
         // warm up
         Thread.sleep(60000);
-        warmup(ctx);
+//        warmup(ctx);
+
+        int warmUpRate = rate + base; //  (sin0 + 1)
+        long startTs = System.currentTimeMillis();
 
         while (running) {
             long emitStartTime = System.currentTimeMillis();
 
-            if (count == 20) {
-                // change input rate every 1 second.
-                epoch++;
-                curRate = base + Util.changeRateSin(rate, cycle, epoch);
-                System.out.println("epoch: " + epoch%cycle + " current rate is: " + curRate);
-                count = 0;
+            if (System.currentTimeMillis() - startTs < warmUpInterval) {
+                for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
+
+                    long nextId = nextId();
+                    Random rnd = new Random(nextId);
+
+                    // When, in event time, we should generate the event. Monotonic.
+                    long eventTimestamp =
+                            config.timestampAndInterEventDelayUsForEvent(
+                                    config.nextEventNumber(eventsCountSoFar)).getKey();
+
+                    ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
+                    eventsCountSoFar++;
+                }
+
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
+            } else { // after warm up
+                if (count == 20) {
+                    // change input rate every 1 second.
+                    epoch++;
+                    curRate = base + Util.changeRateSin(rate, cycle, epoch);
+                    System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
+                    count = 0;
+                }
+
+                for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
+
+                    long nextId = nextId();
+                    Random rnd = new Random(nextId);
+
+                    // When, in event time, we should generate the event. Monotonic.
+                    long eventTimestamp =
+                            config.timestampAndInterEventDelayUsForEvent(
+                                    config.nextEventNumber(eventsCountSoFar)).getKey();
+
+                    ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
+                    eventsCountSoFar++;
+                }
+
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
+                count++;
             }
-
-            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
-
-                long nextId = nextId();
-                Random rnd = new Random(nextId);
-
-                // When, in event time, we should generate the event. Monotonic.
-                long eventTimestamp =
-                        config.timestampAndInterEventDelayUsForEvent(
-                                config.nextEventNumber(eventsCountSoFar)).getKey();
-
-                ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
-                eventsCountSoFar++;
-            }
-
-            // Sleep for the rest of timeslice if needed
-//            Util.pause(emitStartTime);
-            sleepCnt++;
-            long cur = System.currentTimeMillis();
-            if (cur < sleepCnt*50 + streamStartTime) {
-                sleep((sleepCnt*50 + streamStartTime) - cur);
-            }
-            count++;
         }
     }
 
@@ -115,7 +129,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         int curRate = rate + base; //  (sin0 + 1)
         long startTs = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTs < warmUpInterval) {
-//            long emitStartTime = System.currentTimeMillis();
+            long emitStartTime = System.currentTimeMillis();
             for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
 
                 long nextId = nextId();
@@ -131,12 +145,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
             }
 
             // Sleep for the rest of timeslice if needed
-//            Util.pause(streamStartTime);
-            sleepCnt++;
-            long cur = System.currentTimeMillis();
-            if (cur < sleepCnt*50 + streamStartTime) {
-                sleep((sleepCnt*50 + streamStartTime) - cur);
-            }
+            Util.pause(emitStartTime);
         }
     }
 
