@@ -56,8 +56,8 @@ public class Query5 {
         env.setStateBackend(new MemoryStateBackend(100000000));
 
 
-//        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-//        env.getConfig().setAutoWatermarkInterval(1000);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.getConfig().setAutoWatermarkInterval(1000);
 
         // enable latency tracking
         env.getConfig().setLatencyTrackingInterval(5000);
@@ -68,8 +68,8 @@ public class Query5 {
         final int srcWarmUp = params.getInt("srcWarmUp", 100);
 
         DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase, srcWarmUp*1000))
-                .setParallelism(params.getInt("p-bid-source", 1));
-//                .assignTimestampsAndWatermarks(new TimestampAssigner());
+                .setParallelism(params.getInt("p-bid-source", 1))
+                .assignTimestampsAndWatermarks(new TimestampAssigner());
 
         // SELECT B1.auction, count(*) AS num
         // FROM Bid [RANGE 60 MINUTE SLIDE 1 MINUTE] B1
