@@ -77,25 +77,28 @@ QUERY=5
 RATE=0
 CYCLE=60
 N=6
-BASE=150000
+AVGRATE=200000
 #RATE=100000
 WARMUP=100
-RUNTIME=300
+RUNTIME=600
 Psource=5
 
-for RATE in 50000; do
-    EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}l${l}
+for RATE in 50000 100000; do
+    for CYCLE in 120 180 240 300; do
+        BASE=`expr ${AVGRATE} - ${RATE}`
+        EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}l${l}
 
-    cleanEnv
-    configFlink
-    runFlink
-    runApp
+        cleanEnv
+        configFlink
+        runFlink
+        runApp
 
-    python -c 'import time; time.sleep('"${RUNTIME}"')'
+        python -c 'import time; time.sleep('"${RUNTIME}"')'
 
-    # draw figure
-    draw
-    closeFlink
+        # draw figure
+        draw
+        closeFlink
 
-#    python -c 'import time; time.sleep(30)'
+    #    python -c 'import time; time.sleep(30)'
+done
 done
