@@ -23,7 +23,7 @@ jobname = sys.argv[1]
 warmup = int(sys.argv[2])
 runtime = int(sys.argv[3])
 input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
-# input_file = '/home/samza/workspace/newGT/log/flink-samza-standalonesession-0-camel-sane.out'
+# input_file = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/Q5-B100000C60R0-Ns5-N3-L1000l10/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = '/home/samza/workspace/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
@@ -560,7 +560,7 @@ axes = plt.gca()
 axes.set_xlim(xaxes)
 # axes.set_yscale('log')
 # axes.set_yticks([1, 10000, 100000, 500000])
-axes.set_ylim([0, 500000])
+axes.set_ylim([0, 2000000])
 plt.xlabel('Index (s)')
 plt.ylabel('Rate (messages per second)')
 plt.title('Total Arrival Rate')

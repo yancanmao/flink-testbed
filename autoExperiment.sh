@@ -35,7 +35,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} 0
+    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
 }
 
 # clsoe flink clsuter
@@ -75,16 +75,16 @@ l=10
 QUERY=5
 
 RATE=0
-#BASE=10000
 CYCLE=60
-N=1
-BASE=100000
-RATE=100000
+N=6
+BASE=150000
+#RATE=100000
 WARMUP=100
-RUNTIME=600
+RUNTIME=300
+Psource=5
 
-for CYCLE in 30 60 120; do
-    EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}l${l}
+for RATE in 50000; do
+    EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}l${l}
 
     cleanEnv
     configFlink
