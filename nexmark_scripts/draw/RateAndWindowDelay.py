@@ -27,7 +27,7 @@ input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-
 # input_file = '/home/samza/workspace/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
-xaxes = [-warmup, runtime-warmup]
+xaxes = [0, runtime]
 maxOEs = 10
 
 executorsFigureFlag = True
@@ -43,7 +43,7 @@ containerWindowDelay = {}
 containerRealWindowDelay = {}
 containerResidual = {}
 containerArrivalRateT = {}
-containerServiceRateT = {}  
+containerServiceRateT = {}
 containerLongtermDelay = {}
 containerLongtermDelayT = {}
 containerWindowDelayT = {}
@@ -92,10 +92,10 @@ def parseContainerArrivalRate(split, base):
                 containerArrivalRate[Id] = []
                 containerArrivalRateT[Id] = []
             containerArrivalRate[Id] += [float(value)* 1000]
-            containerArrivalRateT[Id] += [(long(time) - initialTime)/base - warmup*10]
-            if( (long(time) - initialTime)/base - warmup*10 not in totalArrivalRate):
-                totalArrivalRate[(long(time) - initialTime)/base - warmup*10] = 0.0
-            totalArrivalRate[(long(time) - initialTime)/base - warmup*10] += float(value) * 1000
+            containerArrivalRateT[Id] += [(long(time) - initialTime)/base]
+            if( (long(time) - initialTime)/base not in totalArrivalRate):
+                totalArrivalRate[(long(time) - initialTime)/base] = 0.0
+            totalArrivalRate[(long(time) - initialTime)/base] += float(value) * 1000
 
 def parseContainerServiceRate(split, base):
     global initialTime
@@ -117,7 +117,7 @@ def parseContainerServiceRate(split, base):
                 containerServiceRate[Id] = []
                 containerServiceRateT[Id] = []
             containerServiceRate[Id] += [float(value)* 1000]
-            containerServiceRateT[Id] += [(long(time) - initialTime)/base - warmup*10]
+            containerServiceRateT[Id] += [(long(time) - initialTime)/base]
 
 def parseContainerWindowDelay(split, base):
     global initialTime, overallWindowDelayT, overallWindowDelay
@@ -138,10 +138,10 @@ def parseContainerWindowDelay(split, base):
                 containerWindowDelay[Id] = []
                 containerWindowDelayT[Id] = []
             containerWindowDelay[Id] += [float(value)]
-            containerWindowDelayT[Id] += [(long(time) - initialTime)/base - warmup*10]
+            containerWindowDelayT[Id] += [(long(time) - initialTime)/base]
 
-            if(len(overallWindowDelayT) == 0 or overallWindowDelayT[-1] < (long(time) - initialTime)/base - warmup*10):
-                overallWindowDelayT += [(long(time) - initialTime)/base - warmup*10]
+            if(len(overallWindowDelayT) == 0 or overallWindowDelayT[-1] < (long(time) - initialTime)/base):
+                overallWindowDelayT += [(long(time) - initialTime)/base]
                 overallWindowDelay += [float(value)]
             elif(overallWindowDelay[-1] < float(value)):
                 overallWindowDelay[-1] = float(value)
@@ -168,7 +168,7 @@ def parseContainerLongtermDelay(split, base):
             if(value>1000000): value = 1000000
             elif(value<0): value = 0
             containerLongtermDelay[Id] += [float(value)]
-            containerLongtermDelayT[Id] += [(long(time) - initialTime)/base - warmup*10]
+            containerLongtermDelayT[Id] += [(long(time) - initialTime)/base]
 
 def readContainerRealWindowDelay(Id):
     global initialTime, overallWindowDelayT, overallWindowDelay, overallRealWindowDelayT, overallRealWindowDelay, userWindowSize
@@ -176,7 +176,7 @@ def readContainerRealWindowDelay(Id):
     counter = 1
     processed = 0
     size = 0
-    base = 1    
+    base = 1
     queue = []
     total = 0;
     lastTime = -100000000
@@ -190,14 +190,14 @@ def readContainerRealWindowDelay(Id):
                 partition = split[0]
                 processed += 1
                 time = split[2]
-                time = (long(time) - initialTime)/base - warmup*10
+                time = (long(time) - initialTime)/base
                 queue += [[time, float(split[1])]]
                 total += float(split[1])
                 while(queue[0][0] < time - userWindowSize):
                     total -= queue[0][1]
                     queue = queue[1:]
-            
-                
+
+
                 if(lastTime <= time - 400 and len(queue) > 0):
                     if(Id not in containerRealWindowDelay):
                         containerRealWindowDelayT[Id] = []
@@ -205,7 +205,7 @@ def readContainerRealWindowDelay(Id):
                     containerRealWindowDelayT[Id] += [time]
                     containerRealWindowDelay[Id] += [total/len(queue)]
 
-                    
+
 print("Reading from file:" + input_file)
 counter = 0
 arrived = {}
@@ -234,7 +234,7 @@ with open(input_file) as f:
             j = split.index("time:")
             src = split[j+4]
             tgt = split[j+7].rstrip()
-            time = (long(split[j+1]) - initialTime)/base - warmup*10
+            time = (long(split[j+1]) - initialTime)/base
             if(src not in migrationDecisionTime):
                 migrationDecisionTime[src] = []
             migrationDecisionTime[src] += [time]
@@ -252,7 +252,7 @@ with open(input_file) as f:
                 decision += [0]
 
         if (split[0] == 'Number' and split[2] == 'severe'):
-            time = int(lines[i-1].split(' ')[2]) - warmup*10
+            time = int(lines[i-1].split(' ')[2])
             numberOfSevereT += [time]
             numberOfSevere += [int(split[4])]
 
@@ -261,7 +261,7 @@ with open(input_file) as f:
             src = split[i+1]
             tgt = split[i+3].rstrip()
             print('Migration complete from ' + src + ' to ' + tgt)
-            time = (long(split[4]) - initialTime)/base - warmup*10
+            time = (long(split[4]) - initialTime)/base
             if(src not in migrationDeployTime):
                 migrationDeployTime[src] = []
             migrationDeployTime[src] += [time]
@@ -314,7 +314,7 @@ def addMigrationLine(Id, ly):
             Y = [0]
             Y += [ly]
             lines += [[X, Y, 'r']]
-          
+
     return lines
 
 import collections
@@ -434,7 +434,7 @@ if(executorsFigureFlag):
         index += 1
         #readContainerRealWindowDelay(Id)
         legend = ['Window Delay', #'Real Window Delay',
-                   'Long Term Delay']
+                  'Long Term Delay']
         #fig = plt.figure(figsize=(25,15))
 
         plt.plot(containerWindowDelayT[Id], containerWindowDelay[Id],'bs',
@@ -578,7 +578,7 @@ plt.xlabel('Index (s)')
 plt.ylabel('Delay (s)')
 axes = plt.gca()
 axes.set_xlim(xaxes)
-#axes.set_ylim([0,200])    
+#axes.set_ylim([0,200])
 plt.title('Overall Window Delay')
 plt.grid(True)
 plt.savefig(output_path + jobname + '_WorstWindowDelay.png')
