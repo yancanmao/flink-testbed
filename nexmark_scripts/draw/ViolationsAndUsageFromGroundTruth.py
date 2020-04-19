@@ -33,6 +33,7 @@ calculateInterval = [0, runtime]  # The interval we calculate violation percenta
 substreamAvgLatency = {}  # Dict { substreamId : [[Arrival, Completed]...]}
 
 inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
+# inputDir = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + figureName + '/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 

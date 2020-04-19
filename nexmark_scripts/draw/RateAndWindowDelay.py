@@ -23,6 +23,8 @@ jobname = sys.argv[1]
 warmup = int(sys.argv[2])
 runtime = int(sys.argv[3])
 input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
+# input_file = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + jobname + '/flink-samza-standalonesession-0-camel-sane.out'
+
 # input_file = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/Q5-B100000C60R0-Ns5-N3-L1000l10/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = '/home/samza/workspace/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
 # input_file = 'GroundTruth/stdout'

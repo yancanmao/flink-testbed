@@ -5,9 +5,11 @@ FLINK_APP_DIR="/home/samza/workspace/flink-testbed"
 
 # clean kafka related data
 function cleanEnv() {
+    rm -rf /tmp/flink*
     export JAVA_HOME=/home/samza/kit/jdk
     ~/samza-hello-samza/bin/grid stop kafka
     ~/samza-hello-samza/bin/grid stop zookeeper
+    kill -9 $(jps | grep kafka | awk '{print $1}')
     rm -r /data/kafka/kafka-logs/
     rm -r /tmp/zookeeper/
 
@@ -15,6 +17,8 @@ function cleanEnv() {
 
     ~/samza-hello-samza/bin/grid start zookeeper
     ~/samza-hello-samza/bin/grid start kafka
+
+    python -c 'import time; time.sleep(5)'
 }
 
 # configure parameters in flink bin
@@ -35,7 +39,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
+    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 0
 }
 
 # clsoe flink clsuter
@@ -83,10 +87,11 @@ WARMUP=100
 RUNTIME=600
 Psource=5
 
-for RATE in 50000 100000; do
-    for CYCLE in 120 180 240 300; do
+for RATE in 50000 100000; do # 50000 100000
+    for CYCLE in 60 120 180 240 300; do # 60 120 180 240 300
         BASE=`expr ${AVGRATE} - ${RATE}`
         EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}l${l}
+        echo $EXP_NAME
 
         cleanEnv
         configFlink
