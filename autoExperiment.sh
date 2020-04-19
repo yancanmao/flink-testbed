@@ -23,9 +23,22 @@ function cleanEnv() {
 
 # configure parameters in flink bin
 function configFlink() {
+    # set user requirement
     sed 's/^\(\s*streamswitch.requirement.latency\s*:\s*\).*/\1'"$L"'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp
-    sed 's/^\(\s*streamswitch.system.l\s*:\s*\).*/\1'"$l"'/' tmp > ${FLINK_DIR}/conf/flink-conf.yaml
-    rm tmp
+    sed 's/^\(\s*streamswitch.system.l_low\s*:\s*\).*/\1'"$l_low"'/' tmp > tmp2
+    sed 's/^\(\s*streamswitch.system.l_high\s*:\s*\).*/\1'"$l_high"'/' tmp2 > ${FLINK_DIR}/conf/flink-conf.yaml
+    rm tmp tmp2
+
+    # set static or streamswitch
+    if [[ ${isTreat} == 1 ]]
+    then
+        sed 's/^\(\s*streamswitch.system.is_treat\s*:\s*\).*/\1'true'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp
+        mv tmp ${FLINK_DIR}/conf/flink-conf.yaml
+    elif [[ ${isTreat} == 0 ]]
+    then
+        sed 's/^\(\s*streamswitch.system.is_treat\s*:\s*\).*/\1'false'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp
+        mv tmp ${FLINK_DIR}/conf/flink-conf.yaml
+    fi
 }
 
 # run flink clsuter
@@ -59,51 +72,44 @@ function draw() {
     python2 ${FLINK_APP_DIR}/nexmark_scripts/draw/ViolationsAndUsageFromGroundTruth.py ${EXP_NAME} ${WARMUP} ${RUNTIME}
 }
 
-#for L in 1000 4000 16000; do
-#    for l in 50 100 150 200; do
-#        ALPHA=`echo "$l $L" | awk '{printf "%.5f \n", $1/$2}'`
-#        echo run experment with L = $L, ALPHA = $ALPHA
-#        configFlink
-#        runFlink
-#        runApp
-#        python -c 'import time; time.sleep(300)'
-#
-#        closeFlink
-#        python -c 'import time; time.sleep(30)'
-#    done
-#done
-
+# set in Flink
 L=1000
-l=10
+l_low=20
+l_high=20
+isTreat=1
 
+# only used in script
 QUERY=5
+RUNTIME=600
 
+# set in Flink app
 RATE=0
 CYCLE=60
 N=6
 AVGRATE=200000
 #RATE=100000
 WARMUP=100
-RUNTIME=600
 Psource=5
 
-for RATE in 50000 100000; do # 50000 100000
-    for CYCLE in 60 120 180 240 300; do # 60 120 180 240 300
-        BASE=`expr ${AVGRATE} - ${RATE}`
-        EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}l${l}
-        echo $EXP_NAME
+for RATE in 50000; do # 50000 100000
+    for CYCLE in 60; do # 60 120 180 240 300
+        for isTreat in 0 1; do
+            BASE=`expr ${AVGRATE} - ${RATE}`
+            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}
+            echo ${EXP_NAME}
 
-        cleanEnv
-        configFlink
-        runFlink
-        runApp
+            cleanEnv
+            configFlink
+            runFlink
+            runApp
 
-        python -c 'import time; time.sleep('"${RUNTIME}"')'
+            python -c 'import time; time.sleep('"${RUNTIME}"')'
 
-        # draw figure
-        draw
-        closeFlink
+            # draw figure
+            draw
+            closeFlink
 
-    #    python -c 'import time; time.sleep(30)'
-done
+        #    python -c 'import time; time.sleep(30)'
+        done
+    done
 done
