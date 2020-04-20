@@ -48,6 +48,7 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
         int counter = 0;
 
         int noRecSleepCnt = 0;
+        int sleepCnt = 0;
 
         try {
             stream = new FileReader(FILE);
@@ -58,19 +59,20 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
             while ((sCurrentLine = br.readLine()) != null) {
 
                 if (sCurrentLine.equals("end")) {
-                    noRecSleepCnt++;
+                    sleepCnt++;
                     if (counter == 0) {
+                        noRecSleepCnt++;
                         System.out.println("no record in this sleep !" + noRecSleepCnt);
                     }
                     System.out.println("output rate: " + counter);
                     counter = 0;
                     cur = System.currentTimeMillis();
-                    if (cur-start < 50) {
-                        sleep(50 - (cur - start));
+                    if (cur < sleepCnt*50 + start) {
+                        sleep((sleepCnt*50 + start) - cur);
                     } else {
-                        System.out.println("rate exceeds 1 second.");
+                        System.out.println("rate exceeds" + 50 + "ms.");
                     }
-                    start = System.currentTimeMillis();
+//                    start = System.currentTimeMillis();
                 }
 
                 if (sCurrentLine.split("\\|").length < 10) {
