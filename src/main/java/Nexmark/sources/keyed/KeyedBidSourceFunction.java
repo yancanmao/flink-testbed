@@ -115,7 +115,8 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
                             config.timestampAndInterEventDelayUsForEvent(
                                     config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                    ctx.collect(new Tuple2<>(nextId, BidGenerator.nextBid(nextId, rnd, eventTimestamp, config)));
+                    // to make it has stable rate among different task
+                    ctx.collect(new Tuple2<>(getLong(), BidGenerator.nextBid(nextId, rnd, eventTimestamp, config)));
                     eventsCountSoFar++;
                 }
 
@@ -126,30 +127,6 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
         }
     }
 
-    private void warmup(SourceContext<Bid> ctx) throws InterruptedException {
-        int curRate = rate + base; //  (sin0 + 1)
-        long startTs = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTs < warmUpInterval) {
-            long emitStartTime = System.currentTimeMillis();
-            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
-
-                long nextId = nextId();
-                Random rnd = new Random(nextId);
-
-                // When, in event time, we should generate the event. Monotonic.
-                long eventTimestamp =
-                        config.timestampAndInterEventDelayUsForEvent(
-                                config.nextEventNumber(eventsCountSoFar)).getKey();
-
-                ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
-                eventsCountSoFar++;
-            }
-
-            // Sleep for the rest of timeslice if needed
-            Util.pause(emitStartTime);
-        }
-    }
-
     @Override
     public void cancel() {
         running = false;
@@ -157,5 +134,9 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
 
     private long nextId() {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
+    }
+
+    private static long getLong() {
+        return (long) Math.random();
     }
 }
