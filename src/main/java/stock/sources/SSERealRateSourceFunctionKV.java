@@ -50,6 +50,8 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
         int noRecSleepCnt = 0;
         int sleepCnt = 0;
 
+        Thread.sleep(60000);
+
         try {
             stream = new FileReader(FILE);
             br = new BufferedReader(stream);
