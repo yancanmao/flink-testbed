@@ -711,7 +711,7 @@ def draw(deltaT, jobname, runtime):
     plt.grid(True)
     axes = plt.gca()
     axes.set_xlim(xaxes)
-    axes.set_ylim([0,500000])
+    axes.set_ylim([0,50000])
     plt.xlabel('Index (s)')
     plt.ylabel('Rate (messages per second)')
     plt.title('Total Arrival Rate')
