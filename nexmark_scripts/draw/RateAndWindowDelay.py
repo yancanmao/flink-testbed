@@ -744,7 +744,7 @@ def draw(deltaT, jobname, warmup, runtime):
     overallWindowDelay = [i / 1000 for i in overallWindowDelay]
 
     # add warmup marker
-    plt.plot([warmup, warmup], [0, 1000], 'k--', linewidth=5.0)
+    plt.plot([warmup, warmup], [0, 10], 'k--', linewidth=5.0)
 
     plt.plot(overallWindowDelayT, overallWindowDelay, 'bs')#, containerRealWindowDelayT[Id], containerRealWindowDelay[Id], 'r^')
     plt.legend(legend, loc='upper left')
