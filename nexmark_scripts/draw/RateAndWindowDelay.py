@@ -703,6 +703,12 @@ def draw(deltaT, jobname, warmup, runtime):
     print("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
     retValue += [numLoadBalance, numScaleIn, numScaleOut]
 
+    # save stats to file
+    stats_logs_path = output_path + 'model_stats.txt'
+    with open(stats_logs_path, 'w+') as f:
+        print >> f, ("Avg number of OEs=" + str(avgOEs))
+        print >> f, ("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
+
     #Draw total arrival rate
     print("Draw total arrival rate")
     arrivalRate = []
