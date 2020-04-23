@@ -18,7 +18,7 @@ plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 MARKERSIZE=4
 
-def draw(deltaT, jobname, runtime):
+def draw(deltaT, jobname, warmup, runtime):
     #jobname = '4h_16_L5T5l120'
     retValue = []
     input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
@@ -365,7 +365,7 @@ def draw(deltaT, jobname, runtime):
                 groups[index / maxId] = []
             groups[index / maxId].append(sortedIds[index])
         for groupId in range(0, len(groups)):
-            fig = plt.figure(figsize=(45, 10 * maxId))
+            fig = plt.figure(figsize=(45, 10 * (maxId+1)))
             index = 1
             for Id in groups[groupId]:
                 print('Draw utilization {0}: {1} {2}'.format(groupId, index, Id))
@@ -407,7 +407,7 @@ def draw(deltaT, jobname, runtime):
                 groups[index / maxId] = []
             groups[index / maxId].append(sortedIds[index])
         for groupId in range(0, len(groups)):
-            fig = plt.figure(figsize=(45, 10 * maxId))
+            fig = plt.figure(figsize=(45, 10 * (maxId+1)))
             index = 1
             for Id in groups[groupId]:
                 print('Draw cpu usage {0}: {1} {2}'.format(groupId, index, Id))
@@ -420,6 +420,10 @@ def draw(deltaT, jobname, runtime):
                 lines = addMigrationLine(Id, 1000)
                 for line in lines:
                     plt.plot(line[0], line[1], linewidth=1.0, color=line[2])
+
+                # add warmup marker
+                plt.plot([warmup*10, warmup*10], [0, 10000], 'k--', linewidth=5.0)
+
                 plt.legend(legend, loc='upper left')
                 plt.xlabel('Index (' + '1' + 's)')
                 plt.ylabel('CPU Usage (Ratio)')
@@ -427,7 +431,7 @@ def draw(deltaT, jobname, runtime):
                 axes = plt.gca()
                 axes.set_xlim(xaxes[0] * 1000 / deltaT, xaxes[1] * 1000 / deltaT)
                 axes.set_xticks(xticks)
-                axes.set_xticklabels(xlabels)
+                # axes.set_xticklabels(xlabels)
                 # axes.set_yscale('log')
                 axes.set_ylim([0, 1.0])
                 axes.set_yticks(np.arange(0, 1.0, 0.05))
@@ -455,7 +459,7 @@ def draw(deltaT, jobname, runtime):
                 groups[index / maxId] = []
             groups[index / maxId].append(sortedIds[index])
         for groupId in range(0, len(groups)):
-            fig = plt.figure(figsize=(45, 10 * maxId))
+            fig = plt.figure(figsize=(45, 10 * (maxId+1)))
             index = 1
             for Id in groups[groupId]:
                 print('Draw arrival rate {0}: {1} {2}'.format(groupId, index, Id))
@@ -470,6 +474,10 @@ def draw(deltaT, jobname, runtime):
                 lines = addMigrationLine(Id, 10000)
                 for line in lines:
                     plt.plot(line[0], line[1], linewidth=1.0, color=line[2])
+
+                # add warmup marker
+                plt.plot([warmup*10, warmup*10], [0, 10000], 'k--', linewidth=5.0)
+
                 plt.legend(legend, loc='upper left')
                 plt.xlabel('Index (' + '1' + 's)')
                 plt.ylabel('Rate (messages per second)')
@@ -477,7 +485,7 @@ def draw(deltaT, jobname, runtime):
                 axes = plt.gca()
                 axes.set_xlim(xaxes[0] * 1000 / deltaT, xaxes[1] * 1000 / deltaT)
                 axes.set_xticks(xticks)
-                axes.set_xticklabels(xlabels)
+                # axes.set_xticklabels(xlabels)
                 #axes.set_yscale('log')
                 axes.set_ylim([1, 10000])
                 #axes.set_yticks([1, 10, 100, 1000, 10000, 100000])
@@ -568,7 +576,7 @@ def draw(deltaT, jobname, runtime):
                 groups[index / maxId] = []
             groups[index / maxId].append(sortedIds[index])
         for groupId in range(0, len(groups)):
-            fig = plt.figure(figsize=(45, 10 * maxId))
+            fig = plt.figure(figsize=(45, 10 * (maxId+1)))
             index = 1
             for Id in groups[groupId]:
                 print('Draw window delay{0}: {1} {2}'.format(groupId, index, Id))
@@ -585,6 +593,10 @@ def draw(deltaT, jobname, runtime):
                 lines = addMigrationLine(Id, 50000)
                 for line in lines:
                     plt.plot(line[0], line[1], linewidth=1.0, color=line[2])
+
+                # add warmup marker
+                plt.plot([warmup*10, warmup*10], [0, 100000], 'k--', linewidth=5.0)
+
                 plt.legend(legend, loc='upper left')
                 plt.xlabel('Index (x' + '1' + 's)')
                 plt.ylabel('Delay (ms)')
@@ -592,7 +604,7 @@ def draw(deltaT, jobname, runtime):
                 axes.set_xlim(xaxes[0] * 1000 / deltaT, xaxes[1] * 1000 / deltaT)
                 axes.set_xticks(xticks)
                 axes.set_xticklabels(xlabels)
-                axes.set_ylim([1,100000])
+                axes.set_ylim([1,50000])
                 axes.set_yscale('log')
                 plt.title('Container ' + Id + ' Window Delay')
                 #plt.show()
@@ -647,6 +659,10 @@ def draw(deltaT, jobname, runtime):
         plt.plot([x, x + 1], [y, y], 'r')
         plt.plot([x, x], [y, 0], 'r')
         plt.plot([x + 1, x + 1], [y, 0], 'r')
+
+    # add warmup marker
+    plt.plot([warmup, warmup], [0, 100], 'k--', linewidth=5.0)
+
     plt.legend(legend, loc='upper left')
     plt.grid(True)
     axes = plt.gca()
@@ -687,13 +703,6 @@ def draw(deltaT, jobname, runtime):
     print("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
     retValue += [numLoadBalance, numScaleIn, numScaleOut]
 
-
-    # save stats to file
-    stats_logs_path = output_path + 'model_stats.txt'
-    with open(stats_logs_path, 'w+') as f:
-        print >> f, ("Avg number of OEs=" + str(avgOEs))
-        print >> f, ("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
-
     #Draw total arrival rate
     print("Draw total arrival rate")
     arrivalRate = []
@@ -706,6 +715,10 @@ def draw(deltaT, jobname, runtime):
     fig = plt.figure(figsize=(60,40))
     arrivalRateT = [i * deltaT / 1000 for i in arrivalRateT]
     plt.plot(arrivalRateT, arrivalRate , 'b')
+
+    # add warmup marker
+    plt.plot([warmup, warmup], [0, 50000], 'k--', linewidth=5.0)
+
     plt.legend(legend, loc='upper left')
     #print(arrivalRateT, arrivalRate)
     plt.grid(True)
@@ -723,6 +736,10 @@ def draw(deltaT, jobname, runtime):
     fig = plt.figure(figsize=(60,40))
     overallWindowDelayT = [i * deltaT / 1000 for i in overallWindowDelayT]
     overallWindowDelay = [i / 1000 for i in overallWindowDelay]
+
+    # add warmup marker
+    plt.plot([warmup, warmup], [0, 1000], 'k--', linewidth=5.0)
+
     plt.plot(overallWindowDelayT, overallWindowDelay, 'bs')#, containerRealWindowDelayT[Id], containerRealWindowDelay[Id], 'r^')
     plt.legend(legend, loc='upper left')
     plt.xlabel('Index (s)')
@@ -739,5 +756,5 @@ if __name__ == "__main__":
     jobname = sys.argv[1]
     warmup = int(sys.argv[2])
     runtime = int(sys.argv[3])
-    draw(100, jobname, runtime)
+    draw(100, jobname, warmup, runtime)
 
