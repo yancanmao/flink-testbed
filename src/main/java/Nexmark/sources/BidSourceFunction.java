@@ -25,6 +25,7 @@ import org.apache.beam.sdk.nexmark.sources.generator.model.BidGenerator;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 
 import java.util.Random;
+import java.util.*;
 
 /**
  * A ParallelSourceFunction that generates Nexmark Bid data
@@ -32,12 +33,14 @@ import java.util.Random;
 public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
 
     private volatile boolean running = true;
-    private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
+    private GeneratorConfig config;
     private long eventsCountSoFar = 0;
     private int rate;
     private int cycle = 60;
     private int base = 0;
     private int warmUpInterval = 100000;
+
+    private HashMap<Long, Long> auctions = new HashMap<>();
 
     public BidSourceFunction(int srcRate, int cycle) {
         this.rate = srcRate;
@@ -55,6 +58,11 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         this.cycle = cycle;
         this.base = base;
         this.warmUpInterval = warmUpInterval;
+        NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
+        nexconfig.hotAuctionRatio = 1;
+        nexconfig.hotBiddersRatio = 1;
+        nexconfig.numInFlightAuctions = 1;
+        config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
     }
 
     public BidSourceFunction(int srcRate) {
@@ -69,7 +77,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         int curRate = base + rate;
 
         // warm up
-        Thread.sleep(60000);
+        Thread.sleep(30000);
 //        warmup(ctx);
 
         long startTs = System.currentTimeMillis();
@@ -113,7 +121,11 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
                             config.timestampAndInterEventDelayUsForEvent(
                                     config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                    ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
+                    Bid bid = BidGenerator.nextBid(nextId, rnd, eventTimestamp, config);
+                    auctions.put(bid.auction, auctions.getOrDefault(bid.auction, 0l) + 1);
+                    System.out.println("Auctions size: " + auctions.size());
+
+                    ctx.collect(bid);
                     eventsCountSoFar++;
                 }
 
