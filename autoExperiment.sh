@@ -9,7 +9,7 @@ function cleanEnv() {
     export JAVA_HOME=/home/samza/kit/jdk
     ~/samza-hello-samza/bin/grid stop kafka
     ~/samza-hello-samza/bin/grid stop zookeeper
-    kill -9 $(jps | grep kafka | awk '{print $1}')
+    kill -9 $(jps | grep Kafka | awk '{print $1}')
     rm -r /data/kafka/kafka-logs/
     rm -r /tmp/zookeeper/
 
@@ -52,7 +52,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 0
+    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
 }
 
 # clsoe flink clsuter
@@ -74,28 +74,30 @@ function draw() {
 
 # set in Flink
 L=1000
-l_low=20
-l_high=20
+l_low=100
+l_high=100
 isTreat=1
 
 # only used in script
 QUERY=5
-RUNTIME=600
+SUMRUNTIME=720
 
 # set in Flink app
 RATE=0
 CYCLE=60
-N=6
-AVGRATE=200000
+N=5
+AVGRATE=6000
 #RATE=100000
-WARMUP=100
+WARMUP=60
 Psource=5
 
-for RATE in 50000; do # 50000 100000
+#for RATE in 5000 10000; do # 50000 100000
+for RATE in 1000; do # 50000 100000
     for CYCLE in 60; do # 60 120 180 240 300
-        for isTreat in 0 1; do
+        for isTreat in 1; do
             BASE=`expr ${AVGRATE} - ${RATE}`
-            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}
+            RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 60`
+            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}
             echo ${EXP_NAME}
 
             cleanEnv
@@ -109,7 +111,9 @@ for RATE in 50000; do # 50000 100000
             draw
             closeFlink
 
-        #    python -c 'import time; time.sleep(30)'
+            ~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
+            python -c 'import time; time.sleep(30)'
+            kill -9 $(jps | grep ConsoleConsumer | awk '{print $1}')
         done
     done
 done

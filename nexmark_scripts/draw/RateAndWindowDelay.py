@@ -603,8 +603,8 @@ def draw(deltaT, jobname, warmup, runtime):
                 axes = plt.gca()
                 axes.set_xlim(xaxes[0] * 1000 / deltaT, xaxes[1] * 1000 / deltaT)
                 axes.set_xticks(xticks)
-                axes.set_xticklabels(xlabels)
-                axes.set_ylim([1,50000])
+                # axes.set_xticklabels(xlabels)
+                axes.set_ylim([1,100000])
                 axes.set_yscale('log')
                 plt.title('Container ' + Id + ' Window Delay')
                 #plt.show()
@@ -730,7 +730,7 @@ def draw(deltaT, jobname, warmup, runtime):
     plt.grid(True)
     axes = plt.gca()
     axes.set_xlim(xaxes)
-    axes.set_ylim([0,50000])
+    axes.set_ylim([0,100000])
     plt.xlabel('Index (s)')
     plt.ylabel('Rate (messages per second)')
     plt.title('Total Arrival Rate')
@@ -744,7 +744,7 @@ def draw(deltaT, jobname, warmup, runtime):
     overallWindowDelay = [i / 1000 for i in overallWindowDelay]
 
     # add warmup marker
-    plt.plot([warmup, warmup], [0, 10], 'k--', linewidth=5.0)
+    # plt.plot([warmup, warmup], [0, 10], 'k--', linewidth=5.0)
 
     plt.plot(overallWindowDelayT, overallWindowDelay, 'bs')#, containerRealWindowDelayT[Id], containerRealWindowDelay[Id], 'r^')
     plt.legend(legend, loc='upper left')
