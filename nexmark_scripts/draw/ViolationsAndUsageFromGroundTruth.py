@@ -252,8 +252,8 @@ if (True):
 avgViolationPercentage = totalViolation / float(totalTime)
 sumDeviation = 0.0
 
-stats_logs_path = outputDir + 'groudtruth_stats.txt'
-with open(stats_logs_path, 'w+') as f:
+stats_logs_path = outputDir + 'stats.txt'
+with open(stats_logs_path, 'a') as f:
 
     print('avg success rate=', 1 - avgViolationPercentage)
     print('total violation number=' + str(totalViolation))
