@@ -74,6 +74,9 @@ def draw(deltaT, jobname, warmup, runtime):
     scalingDecisionTime = {}
     scalingDeployTime = {}
 
+    totalArrivedProcessed = {}
+    totalBacklog = {}
+
     initialTime = -1
     def parseContainerArrivalRate(split, base, containerArrivalRate, containerArrivalRateT, totalArrivalRate):
         time = split[2]
@@ -115,6 +118,26 @@ def draw(deltaT, jobname, warmup, runtime):
                     containerServiceRateT[Id] = []
                 containerServiceRate[Id] += [float(value)* 1000]
                 containerServiceRateT[Id] += [(long(time) - initialTime)/base]
+
+    def parseBacklog(split, base):
+        time = split[2]
+        info = "".join(split[6:]).replace(' ','')
+        info = info.replace('{','')
+        info = info.replace('}','')
+        containers = info.split(',')
+        total = 0
+        for container in containers:
+            if(len(container)>0):
+                Id = container.split('=')[0]
+                value = container.split('=')[1]
+                if(value == 'null'):
+                    value = 0
+                    total = -1
+                if total != -1:
+                    total += int(value)
+                if long(time) not in totalArrivedProcessed:
+                    totalArrivedProcessed[long(time)] = {}
+                totalArrivedProcessed[long(time)][split[5]] = total
 
     def parseContainerWindowDelay(split, base, containerWindowDelay, containerWindowDelayT, overallWindowDelay, overallWindowDelayT):
         time = split[2]
@@ -185,6 +208,10 @@ def draw(deltaT, jobname, warmup, runtime):
                 parseContainerWindowDelay(split, base, containerWindowDelay, containerWindowDelayT, overallWindowDelay, overallWindowDelayT)
             if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[4] == 'Longterm' and split[5] == 'Delay:'):
                 parseContainerLongtermDelay(split, base, containerLongtermDelay, containerLongtermDelayT)
+
+            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'State,') and (split[5] == 'Arrived:' or split[5] == "Completed:")):
+                parseBacklog(split, base)
+
             if (split[0] == 'State,' and split[5] == 'Utilizations:'):
                 currentTime = long(split[2])
                 info = "".join(split[6:]).replace(' ', '')
@@ -757,6 +784,26 @@ def draw(deltaT, jobname, warmup, runtime):
     plt.grid(True)
     plt.savefig(output_path + jobname + '_WorstWindowDelay.png')
     plt.close(fig)
+
+    for timestamp in totalArrivedProcessed:
+        arrivedProcessed = totalArrivedProcessed[timestamp]
+        if arrivedProcessed["Arrived:"] == -1 or arrivedProcessed["Completed:"] == -1:
+            continue
+        backlog = arrivedProcessed["Arrived:"] - arrivedProcessed["Completed:"]
+        print(arrivedProcessed)
+        if backlog < 0:
+            backlog = 0
+        totalBacklog[timestamp] = backlog
+
+    # plot out backlog figure
+    fig = plt.figure(figsize=(32,18))
+    plt.plot(totalBacklog.keys(), totalBacklog.values())
+    plt.xlabel('Index (100ms)')
+    plt.ylabel('Backlog (tuples)')
+    plt.title('Overall backlog')
+    plt.grid(True)
+    plt.savefig(output_path + jobname + '_backlog.png')
+
     return retValue
 if __name__ == "__main__":
     jobname = sys.argv[1]
