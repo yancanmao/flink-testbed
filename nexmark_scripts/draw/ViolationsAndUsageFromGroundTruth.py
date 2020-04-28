@@ -85,11 +85,11 @@ for fileName in listdir(inputDir):
                         startTime = timeslot
                     if keygroup not in substreamAvgLatency:
                         substreamAvgLatency[keygroup] = {}
-                    else:
-                        alignedTimeslot = (timeslot - startTime) / 1000
-                        if alignedTimeslot in substreamAvgLatency[keygroup]:
-                            print("+++++++ Ground truth error, check whether it is buggy")
-                        substreamAvgLatency[keygroup][alignedTimeslot] = avgLatency
+
+                    alignedTimeslot = (timeslot - startTime) / 1000
+                    if alignedTimeslot in substreamAvgLatency[keygroup]:
+                        print("+++++++ Ground truth error, check whether it is buggy")
+                    substreamAvgLatency[keygroup][alignedTimeslot] = avgLatency
                 if split[0] == 'Entering':
                     startPoint += [int(split[3])]
                 if split[0] == 'Shutdown':
@@ -249,32 +249,45 @@ if (True):
     plt.savefig(outputFile)
     plt.close(fig)
 
+# run RateAndWindowDelay, and get the stats:
+
 avgViolationPercentage = totalViolation / float(totalTime)
 sumDeviation = 0.0
 
+
+print('avg success rate=', 1 - avgViolationPercentage)
+print('total violation number=' + str(totalViolation))
+
+# print >> f, ('avg success rate=', 1 - avgViolationPercentage)
+# print >> f, ('total violation number=' + str(totalViolation))
+
+violationNotPeak = totalViolation
+timeNotPeak = totalTime
+if (totalViolation > 0):
+    for peakI in range(0, len(warmUpIntervals)):
+        print('violation percentage in warm up ' + str(peakI) + ' is ' + str(
+            violationInWarmUp[peakI] / float(totalViolation)) + ', number is ' + str(violationInWarmUp[peakI]))
+        violationNotPeak -= violationInWarmUp[peakI]
+
+        # print >> f, ('violation percentage in warm up ' + str(peakI) + ' is ' + str(
+        #     violationInWarmUp[peakI] / float(totalViolation)) + ', number is ' + str(violationInWarmUp[peakI]))
+
+        timeNotPeak -= totalInPeak[peakI]
+successRate = 1 - violationNotPeak / float(timeNotPeak)
+print('Execept warm up avg success rate=', successRate)
+# print >> f, ('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
+
+from RateAndWindowDelay import draw as ratedraw
+retValue = ratedraw(100, figureName, warmup, runtime) # [AvgOEs, NumLB, NumSI, NumSO]
+
+# # parse figurename and get configurations
+# def parseName(figureName):
+#
+
 stats_logs_path = outputDir + 'stats.txt'
 with open(stats_logs_path, 'a') as f:
-
-    print('avg success rate=', 1 - avgViolationPercentage)
-    print('total violation number=' + str(totalViolation))
-
-    print >> f, ('avg success rate=', 1 - avgViolationPercentage)
-    print >> f, ('total violation number=' + str(totalViolation))
-
-    violationNotPeak = totalViolation
-    timeNotPeak = totalTime
-    if (totalViolation > 0):
-        for peakI in range(0, len(warmUpIntervals)):
-            print('violation percentage in warm up ' + str(peakI) + ' is ' + str(
-                violationInWarmUp[peakI] / float(totalViolation)) + ', number is ' + str(violationInWarmUp[peakI]))
-            violationNotPeak -= violationInWarmUp[peakI]
-
-            print >> f, ('violation percentage in warm up ' + str(peakI) + ' is ' + str(
-                violationInWarmUp[peakI] / float(totalViolation)) + ', number is ' + str(violationInWarmUp[peakI]))
-
-            timeNotPeak -= totalInPeak[peakI]
-    print('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
-    print >> f, ('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
+    f.write("%s\t%s\t%d\t%d\t%d\t%.15f\n" %
+            (figureName, retValue[0], retValue[1], retValue[2], retValue[3], successRate))
 
 # Calculate avg latency
 if (False):
