@@ -69,7 +69,8 @@ public class Query5 {
 
         DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase, srcWarmUp*1000))
                 .setParallelism(params.getInt("p-bid-source", 1))
-                .assignTimestampsAndWatermarks(new TimestampAssigner());
+                .assignTimestampsAndWatermarks(new TimestampAssigner())
+                .setMaxParallelism(params.getInt("mp1", 64));
 
         // SELECT B1.auction, count(*) AS num
         // FROM Bid [RANGE 60 MINUTE SLIDE 1 MINUTE] B1
@@ -79,7 +80,7 @@ public class Query5 {
             public Long getKey(Bid bid) throws Exception {
                 return bid.auction;
             }
-        }).timeWindow(Time.seconds(10), Time.seconds(1))
+        }).timeWindow(Time.seconds(params.getInt("window-size", 2)), Time.seconds(1))
                 .aggregate(new CountBids())
                 .name("Sliding Window")
                 .setParallelism(params.getInt("p-window", 1));
