@@ -22,6 +22,7 @@ def draw(deltaT, jobname, warmup, runtime):
     #jobname = '4h_16_L5T5l120'
     retValue = []
     input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
+    # input_file ='/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/exp0427/' + jobname + '/flink-samza-standalonesession-0-camel-sane.out'
     output_path = 'figures/' + jobname + '/'
     xaxes = [0000, runtime]
     import numpy as np
@@ -788,6 +789,8 @@ def draw(deltaT, jobname, warmup, runtime):
     for timestamp in totalArrivedProcessed:
         arrivedProcessed = totalArrivedProcessed[timestamp]
         if arrivedProcessed["Arrived:"] == -1 or arrivedProcessed["Completed:"] == -1:
+            continue
+        if timestamp > runtime*10:
             continue
         backlog = arrivedProcessed["Arrived:"] - arrivedProcessed["Completed:"]
         print(arrivedProcessed)
