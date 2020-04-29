@@ -286,8 +286,8 @@ retValue = ratedraw(100, figureName, warmup, runtime) # [AvgOEs, NumLB, NumSI, N
 
 stats_logs_path = outputDir + 'stats.txt'
 with open(stats_logs_path, 'a') as f:
-    f.write("%s\t%s\t%d\t%d\t%d\t%.15f\n" %
-            (figureName, retValue[0], retValue[1], retValue[2], retValue[3], successRate))
+    f.write("%s\t%d\t%d\t%s\t%d\t%.15f\n" %
+            (figureName, retValue[1], retValue[2], retValue[3], retValue[0], successRate))
 
 # Calculate avg latency
 if (False):
