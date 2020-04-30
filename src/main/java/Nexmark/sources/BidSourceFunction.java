@@ -75,7 +75,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         int curRate = base + rate;
 
         // warm up
-        Thread.sleep(60000);
+        Thread.sleep(10000);
 //        warmup(ctx);
 
         long startTs = System.currentTimeMillis();
@@ -160,7 +160,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
     }
 
     private long nextId() {
-//        return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
-        return config.firstEventId + eventsCountSoFar;
+        return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
+//        return config.firstEventId + eventsCountSoFar;
     }
 }

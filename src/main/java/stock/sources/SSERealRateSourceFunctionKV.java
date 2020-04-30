@@ -50,7 +50,7 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
         int noRecSleepCnt = 0;
         int sleepCnt = 0;
 
-        Thread.sleep(60000);
+//        Thread.sleep(60000);
 
         try {
             stream = new FileReader(FILE);
@@ -70,7 +70,7 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
                     counter = 0;
                     cur = System.currentTimeMillis();
                     if (cur < sleepCnt*50 + start) {
-                        sleep((sleepCnt*50 + start) - cur);
+//                        sleep((sleepCnt*50 + start) - cur);
                     } else {
                         System.out.println("rate exceeds" + 50 + "ms.");
                     }

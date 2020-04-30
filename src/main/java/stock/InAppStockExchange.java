@@ -138,8 +138,8 @@ public class InAppStockExchange {
 
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
-            latency += System.currentTimeMillis() - value.f2;
-            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
+//            latency += System.currentTimeMillis() - value.f2;
+//            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
 //            tuples++;
 //            if (System.currentTimeMillis() - start >= 1000) {
 //                start = System.currentTimeMillis();
@@ -158,7 +158,7 @@ public class InAppStockExchange {
 ////                    e.printStackTrace();
 ////                }
 //            }
-            out.collect(new Tuple2<>(value.f0, value.f1));
+            out.collect(new Tuple2<>(String.valueOf(value.f0), value.f1));
         }
 
         public Map<String, String> doStockExchange(String[] orderArr, String direction) {
@@ -168,10 +168,10 @@ public class InAppStockExchange {
                 return matchedResult;
             }
             if (direction.equals("S")) {
-                stockExchangeMapSell.put(orderArr[Sec_Code], String.join("|", orderArr));
+                stockExchangeMapSell.put(orderArr[Order_No], String.join("|", orderArr));
                 matchedResult = tradeSell(orderArr, stockExchangeMapBuy);
             } else {
-                stockExchangeMapBuy.put(orderArr[Sec_Code], String.join("|", orderArr));
+                stockExchangeMapBuy.put(orderArr[Order_No], String.join("|", orderArr));
                 matchedResult = tradeBuy(orderArr, stockExchangeMapSell);
             }
             return matchedResult;
@@ -267,6 +267,10 @@ public class InAppStockExchange {
                 Map<String, String> pendingSell,
                 Map<String, String> matchedBuy,
                 Map<String, String> matchedSell) {
+
+            System.out.println("stockExchangeMapSell: " + stockExchangeMapSell.size() + " stockExchangeMapBuy: " + stockExchangeMapBuy.size()
+                    + " total: " + (stockExchangeMapSell.size() + stockExchangeMapBuy.size()));
+
             for (Map.Entry<String, String> order : pendingBuy.entrySet()) {
                 stockExchangeMapBuy.put(order.getKey(), order.getValue());
             }
@@ -280,7 +284,7 @@ public class InAppStockExchange {
                 stockExchangeMapSell.remove(order.getKey());
             }
 
-            System.out.println("stockExchangeMapBuy: " + stockExchangeMapBuy.size() + " stockExchangeMapSell: " + stockExchangeMapSell.size());
+//            System.out.println("stockExchangeMapBuy: " + stockExchangeMapBuy.size() + " stockExchangeMapSell: " + stockExchangeMapSell.size());
         }
 
         private void delay(int interval) {

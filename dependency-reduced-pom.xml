@@ -88,7 +88,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>Nexmark.queries.Query5</mainClass>
+                  <mainClass>stock.InAppStockExchange</mainClass>
                 </transformer>
               </transformers>
             </configuration>

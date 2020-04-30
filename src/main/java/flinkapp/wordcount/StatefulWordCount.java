@@ -34,7 +34,7 @@ public class StatefulWordCount {
 		// set up the execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
+//		env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);

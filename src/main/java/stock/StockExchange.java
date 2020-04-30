@@ -146,7 +146,7 @@ public class StockExchange {
             String stockOrder = (String) value.f1;
             String[] orderArr = stockOrder.split("\\|");
 
-            delay(2);
+            delay(5);
 
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 return;
