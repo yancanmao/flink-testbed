@@ -33,14 +33,14 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
 
             long emitStartTime = System.currentTimeMillis();
             int cur = 0;
-            for (int i = 0; i < sentenceRate/50; i++) {
+            for (int i = 0; i < sentenceRate/20; i++) {
                 ctx.collect(Tuple2.of(getChar(cur), generator.nextSentence(sentenceSize)));
                 cur++;
             }
             // Sleep for the rest of timeslice if needed
             long emitTime = System.currentTimeMillis() - emitStartTime;
-            if (emitTime < 1000/50) {
-                sleep(1000/50 - emitTime);
+            if (emitTime < 50) {
+                sleep(50 - emitTime);
             }
         }
 
@@ -53,6 +53,6 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
     }
 
     private static String getChar(int cur) {
-        return String.valueOf(Math.random()%1024);
+        return String.valueOf(Math.random());
     }
 }

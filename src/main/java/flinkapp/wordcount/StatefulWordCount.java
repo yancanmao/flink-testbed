@@ -2,6 +2,7 @@ package flinkapp.wordcount;
 
 import Nexmark.sinks.DummySink;
 import flinkapp.wordcount.sources.RateControlledSourceFunction;
+import flinkapp.wordcount.sources.RateControlledSourceFunctionKV;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -12,7 +13,9 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
@@ -26,28 +29,35 @@ public class StatefulWordCount {
 		// set up the execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+		env.setStateBackend(new MemoryStateBackend(100000000));
+
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
+		env.disableOperatorChaining();
 
-		final DataStream<String> text = env.addSource(
-				new RateControlledSourceFunction(
+		final DataStream<Tuple2<String, String>> text = env.addSource(
+				new RateControlledSourceFunctionKV(
 						params.getInt("source-rate", 80000),
 						params.getInt("sentence-size", 100)))
 				.uid("sentence-source")
-				.setParallelism(params.getInt("p1", 1));
+				.setParallelism(params.getInt("p1", 1))
+				.setMaxParallelism(params.getInt("mp1", 64))
+				.keyBy(0);
 
 		// split up the lines in pairs (2-tuples) containing:
 		// (word,1)
-		DataStream<Tuple2<String, Long>> counts = text.rebalance()
+		DataStream<Tuple2<String, Long>> counts = text
 				.flatMap(new Tokenizer())
 				.name("Splitter FlatMap")
 				.uid("flatmap")
 				.setParallelism(params.getInt("p2", 1))
+				.setMaxParallelism(params.getInt("mp1", 64))
 				.keyBy(0)
 				.flatMap(new CountWords())
 				.name("Count")
 				.uid("count")
-				.setParallelism(params.getInt("p3", 1));
+				.setParallelism(params.getInt("p3", 1))
+				.setMaxParallelism(params.getInt("mp1", 64));
 
 		GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
 		// write to dummy sink
@@ -64,13 +74,13 @@ public class StatefulWordCount {
 	// USER FUNCTIONS
 	// *************************************************************************
 
-	public static final class Tokenizer implements FlatMapFunction<String, Tuple2<String, Long>> {
+	public static final class Tokenizer implements FlatMapFunction<Tuple2<String, String>, Tuple2<String, Long>> {
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void flatMap(String value, Collector<Tuple2<String, Long>> out) throws Exception {
+		public void flatMap(Tuple2<String, String> value, Collector<Tuple2<String, Long>> out) throws Exception {
 			// normalize and split the line
-			String[] tokens = value.toLowerCase().split("\\W+");
+			String[] tokens = value.f1.toLowerCase().split("\\W+");
 
 			// emit the pairs
 			for (String token : tokens) {
