@@ -35,10 +35,15 @@ public class StatefulWordCount {
 		env.getConfig().setGlobalJobParameters(params);
 		env.disableOperatorChaining();
 
+		final int srcRate = params.getInt("srcRate", 100000);
+		final int srcCycle = params.getInt("srcCycle", 60);
+		final int srcBase = params.getInt("srcBase", 0);
+		final int srcWarmUp = params.getInt("srcWarmUp", 100);
+		final int sentenceSize = params.getInt("sentence-size", 100);
+
 		final DataStream<Tuple2<String, String>> text = env.addSource(
 				new RateControlledSourceFunctionKV(
-						params.getInt("source-rate", 80000),
-						params.getInt("sentence-size", 100)))
+						srcRate, srcCycle, srcBase, srcWarmUp*1000, sentenceSize))
 				.uid("sentence-source")
 				.setParallelism(params.getInt("p1", 1))
 				.setMaxParallelism(params.getInt("mp1", 64))
@@ -82,6 +87,9 @@ public class StatefulWordCount {
 			// normalize and split the line
 			String[] tokens = value.f1.toLowerCase().split("\\W+");
 
+			long start = System.nanoTime();
+			while (System.nanoTime() - start < 100000) {}
+
 			// emit the pairs
 			for (String token : tokens) {
 				if (token.length() > 0) {
@@ -110,6 +118,10 @@ public class StatefulWordCount {
 		@Override
 		public void flatMap(Tuple2<String, Long> value, Collector<Tuple2<String, Long>> out) throws Exception {
 			count.add(value.f1);
+
+			long start = System.nanoTime();
+			while (System.nanoTime() - start < 10000) {}
+
 			out.collect(new Tuple2<>(value.f0, count.get()));
 		}
 
