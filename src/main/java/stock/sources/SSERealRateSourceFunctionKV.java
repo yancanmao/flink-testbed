@@ -23,11 +23,12 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
 
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
-    private static final int Order_Price = 8;
-    private static final int Order_Exec_Vol = 9;
-    private static final int Order_Vol = 10;
-    private static final int Sec_Code = 11;
-    private static final int Trade_Dir = 22;
+    private static final int Last_Upd_Time = 2;
+    private static final int Order_Price = 3;
+    private static final int Order_Exec_Vol = 4;
+    private static final int Order_Vol = 5;
+    private static final int Sec_Code = 6;
+    private static final int Trade_Dir = 7;
 
     private String FILE;
 
@@ -38,11 +39,9 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
     @Override
     public void run(SourceContext<Tuple3<String, String, Long>> ctx) throws Exception {
         String sCurrentLine;
-        List<String> textList = new ArrayList<>();
         FileReader stream = null;
         // // for loop to generate message
         BufferedReader br = null;
-        int sent_sentences = 0;
         long cur = 0;
         long start = 0;
         int counter = 0;
@@ -59,6 +58,20 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
             start = System.currentTimeMillis();
 
             while ((sCurrentLine = br.readLine()) != null) {
+                if (sCurrentLine.equals("CALLAUCTIONEND")) {
+                    // dont let later process be affected
+                    sleepCnt += 30000/50;
+                    System.out.println("output rate: " + counter + " per " + 50 + "ms");
+                    counter = 0;
+
+                    Thread.sleep(30000);
+
+                    for (int i=0; i<128; i++) {
+                        ctx.collect(new Tuple3<>(i + "", "CALLAUCTIONEND", Long.valueOf(i)));
+                    }
+                    sleepCnt += 30000/50;
+                    Thread.sleep(30000);
+                }
 
                 if (sCurrentLine.equals("end")) {
                     sleepCnt++;
@@ -70,22 +83,20 @@ public class SSERealRateSourceFunctionKV extends RichParallelSourceFunction<Tupl
                     counter = 0;
                     cur = System.currentTimeMillis();
                     if (cur < sleepCnt*50 + start) {
-//                        sleep((sleepCnt*50 + start) - cur);
+                        sleep((sleepCnt*50 + start) - cur);
                     } else {
                         System.out.println("rate exceeds" + 50 + "ms.");
                     }
-//                    start = System.currentTimeMillis();
                 }
 
-                if (sCurrentLine.split("\\|").length < 10) {
+                if (sCurrentLine.split("\\|").length < 8) {
                     continue;
                 }
 
                 Long ts = System.currentTimeMillis();
-                String msg = sCurrentLine;
-                List<String> stockArr = Arrays.asList(msg.split("\\|"));
+                List<String> stockArr = Arrays.asList(sCurrentLine.split("\\|"));
 
-                ctx.collect(new Tuple3<>(stockArr.get(Sec_Code), msg, ts));
+                ctx.collect(new Tuple3<>(stockArr.get(Sec_Code), sCurrentLine, ts));
                 counter++;
             }
         } catch (IOException e) {
