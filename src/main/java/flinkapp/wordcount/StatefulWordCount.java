@@ -46,7 +46,7 @@ public class StatefulWordCount {
 						srcRate, srcCycle, srcBase, srcWarmUp*1000, sentenceSize))
 				.uid("sentence-source")
 				.setParallelism(params.getInt("p1", 1))
-				.setMaxParallelism(params.getInt("mp1", 64))
+				.setMaxParallelism(params.getInt("mp2", 64))
 				.keyBy(0);
 
 		// split up the lines in pairs (2-tuples) containing:
@@ -56,13 +56,13 @@ public class StatefulWordCount {
 				.name("Splitter FlatMap")
 				.uid("flatmap")
 				.setParallelism(params.getInt("p2", 1))
-				.setMaxParallelism(params.getInt("mp1", 64))
+				.setMaxParallelism(params.getInt("mp2", 64))
 				.keyBy(0)
 				.flatMap(new CountWords())
 				.name("Count")
 				.uid("count")
 				.setParallelism(params.getInt("p3", 1))
-				.setMaxParallelism(params.getInt("mp1", 64));
+				.setMaxParallelism(params.getInt("mp2", 64));
 
 		GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
 		// write to dummy sink
@@ -88,7 +88,7 @@ public class StatefulWordCount {
 			String[] tokens = value.f1.toLowerCase().split("\\W+");
 
 			long start = System.nanoTime();
-			while (System.nanoTime() - start < 100000) {}
+			while (System.nanoTime() - start < 100000) {} // simulate at most 100k sentences per
 
 			// emit the pairs
 			for (String token : tokens) {
