@@ -256,7 +256,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
                         systemCpuUsage[Id][1].append(value)
 
             #Add migration marker
-            if (split[0] == 'Migration!'):
+            if (split[2] == 'Migration!' and jobid == split[1]):
                 j = split.index("time:")
                 src = split[j+4]
                 tgt = split[j+7].rstrip()
