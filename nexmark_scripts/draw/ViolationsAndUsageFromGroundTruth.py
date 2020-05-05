@@ -23,6 +23,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 figureName = sys.argv[1]
 warmup = int(sys.argv[2])
 runtime = int(sys.argv[3])
+jobid = int(sys.argv[4])
 
 userLatency = 1000
 userWindow = 1000
@@ -286,8 +287,8 @@ retValue = ratedraw(100, figureName, warmup, runtime) # [AvgOEs, NumLB, NumSI, N
 
 stats_logs_path = outputDir + 'stats.txt'
 with open(stats_logs_path, 'a') as f:
-    f.write("%s\t%d\t%d\t%d\t%s\t%.15f\n" %
-            (figureName, retValue[1], retValue[2], retValue[3], retValue[0], successRate))
+    f.write("%s\t%s\t%d\t%d\t%d\t%s\t%.15f\n" %
+            (figureName, jobid, retValue[1], retValue[2], retValue[3], retValue[0], successRate))
 
 # Calculate avg latency
 if (False):

@@ -18,7 +18,7 @@ plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 MARKERSIZE=4
 
-def draw(deltaT, jobname, warmup, runtime):
+def draw(deltaT, jobname, warmup, runtime, jobid):
     #jobname = '4h_16_L5T5l120'
     retValue = []
     input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
@@ -201,19 +201,19 @@ def draw(deltaT, jobname, warmup, runtime):
                 print("Processed to line:" + str(counter))
             if(split[0] == 'Model,' and initialTime == -1):
                 initialTime = long(split[2])
-            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[4] == 'Arrival' and split[5] == 'Rate:'):
+            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[7] == 'Arrival' and split[8] == 'Rate:' and jobid == split[5]):
                 parseContainerArrivalRate(split, base, containerArrivalRate, containerArrivalRateT, totalArrivalRate)
-            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[4] == 'Service' and split[5] == 'Rate:'):
+            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[7] == 'Service' and split[8] == 'Rate:' and jobid == split[5]):
                 parseContainerServiceRate(split, base, containerServiceRate, containerServiceRateT)
-            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[4] == 'Instantaneous' and split[5] == 'Delay:'):
+            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[7] == 'Instantaneous' and split[8] == 'Delay:' and jobid == split[5]):
                 parseContainerWindowDelay(split, base, containerWindowDelay, containerWindowDelayT, overallWindowDelay, overallWindowDelayT)
-            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[4] == 'Longterm' and split[5] == 'Delay:'):
+            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'Model,') and split[7] == 'Longterm' and split[8] == 'Delay:' and jobid == split[5]):
                 parseContainerLongtermDelay(split, base, containerLongtermDelay, containerLongtermDelayT)
 
-            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'State,') and (split[5] == 'Arrived:' or split[5] == "Completed:")):
+            if ((split[0] == 'DelayEstimateModel,' or split[0] == 'State,') and (split[8] == 'Arrived:' or split[8] == "Completed:" and jobid == split[5])):
                 parseBacklog(split, base)
 
-            if (split[0] == 'State,' and split[5] == 'Utilizations:'):
+            if (split[0] == 'State,' and split[8] == 'Utilizations:'):
                 currentTime = long(split[2])
                 info = "".join(split[6:]).replace(' ', '')
                 info = info.replace('{', '')
@@ -524,7 +524,7 @@ def draw(deltaT, jobname, warmup, runtime):
             import os
             if not os.path.exists(output_path):
                 os.makedirs(output_path)
-            plt.savefig(output_path + 'ContainerArrivalAndServiceRate_' + str(groupId) + '.png')
+            plt.savefig(output_path + jobid + '_ContainerArrivalAndServiceRate_' + str(groupId) + '.png')
             plt.close(fig)
 
     # Utilization
@@ -637,7 +637,7 @@ def draw(deltaT, jobname, warmup, runtime):
                 plt.title('Container ' + Id + ' Window Delay')
                 #plt.show()
                 plt.grid(True)
-            plt.savefig(output_path + jobname + '_ContainerWindowDelay_' + str(groupId)+ '.png')
+            plt.savefig(output_path + jobid + '_ContainerWindowDelay_' + str(groupId)+ '.png')
             plt.close(fig)
 
     # Number of OEs
@@ -762,7 +762,7 @@ def draw(deltaT, jobname, warmup, runtime):
     plt.xlabel('Index (s)')
     plt.ylabel('Rate (messages per second)')
     plt.title('Total Arrival Rate')
-    plt.savefig(output_path + jobname + '_TotalArrivalRate.png')
+    plt.savefig(output_path + jobid + '_TotalArrivalRate.png')
     plt.close(fig)
 
     #Draw worst delay
@@ -783,7 +783,7 @@ def draw(deltaT, jobname, warmup, runtime):
     #axes.set_ylim([0,200])
     plt.title('Overall Window Delay')
     plt.grid(True)
-    plt.savefig(output_path + jobname + '_WorstWindowDelay.png')
+    plt.savefig(output_path + jobid + '_WorstWindowDelay.png')
     plt.close(fig)
 
     for timestamp in totalArrivedProcessed:
@@ -805,12 +805,13 @@ def draw(deltaT, jobname, warmup, runtime):
     plt.ylabel('Backlog (tuples)')
     plt.title('Overall backlog')
     plt.grid(True)
-    plt.savefig(output_path + jobname + '_backlog.png')
+    plt.savefig(output_path + jobid + '_backlog.png')
 
     return retValue
 if __name__ == "__main__":
     jobname = sys.argv[1]
     warmup = int(sys.argv[2])
     runtime = int(sys.argv[3])
-    draw(100, jobname, warmup, runtime)
+    jobid = int(sys.argv[4])
+    draw(100, jobname, warmup, runtime, jobid)
 
