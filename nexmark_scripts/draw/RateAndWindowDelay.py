@@ -81,7 +81,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
     initialTime = -1
     def parseContainerArrivalRate(split, base, containerArrivalRate, containerArrivalRateT, totalArrivalRate):
         time = split[2]
-        info = "".join(split[6:]).replace(' ','')
+        info = "".join(split[9:]).replace(' ','')
         info = info.replace('{','')
         info = info.replace('}','')
         containers = info.split(',')
@@ -103,7 +103,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
 
     def parseContainerServiceRate(split, base, containerServiceRate, containerServiceRateT):
         time = split[2]
-        info = "".join(split[6:]).replace(' ','')
+        info = "".join(split[9:]).replace(' ','')
         info = info.replace('{','')
         info = info.replace('}','')
         containers = info.split(',')
@@ -122,7 +122,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
 
     def parseBacklog(split, base):
         time = split[2]
-        info = "".join(split[6:]).replace(' ','')
+        info = "".join(split[9:]).replace(' ','')
         info = info.replace('{','')
         info = info.replace('}','')
         containers = info.split(',')
@@ -142,7 +142,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
 
     def parseContainerWindowDelay(split, base, containerWindowDelay, containerWindowDelayT, overallWindowDelay, overallWindowDelayT):
         time = split[2]
-        info = "".join(split[6:]).replace(' ','')
+        info = "".join(split[9:]).replace(' ','')
         info = info.replace('{','')
         info = info.replace('}','')
         containers = info.split(',')
@@ -166,7 +166,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
 
     def parseContainerLongtermDelay(split, base, containerLongtermDelay, containerLongtermDelayT):
         time = split[2]
-        info = "".join(split[6:]).replace(' ','')
+        info = "".join(split[9:]).replace(' ','')
         info = info.replace('{','')
         info = info.replace('}','')
         containers = info.split(',')
@@ -215,7 +215,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
 
             if (split[0] == 'State,' and split[8] == 'Utilizations:'):
                 currentTime = long(split[2])
-                info = "".join(split[6:]).replace(' ', '')
+                info = "".join(split[9:]).replace(' ', '')
                 info = info.replace('{', '')
                 info = info.replace('}', '')
                 oes = info.split(',')
@@ -277,12 +277,12 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
                 else:
                     decision += [0]
 
-            if (split[0] == 'Number' and split[2] == 'severe'):
+            if (split[2] == 'Number' and split[4] == 'severe' and split[1] == jobid):
                 time = int(lines[i-1].split(' ')[2])
                 numberOfSevereT += [time]
                 numberOfSevere += [int(split[4])]
 
-            if (split[0] == 'Executors' and split[1] == 'stopped'):
+            if (split[2] == 'Executors' and split[3] == 'stopped' and split[1] == jobid):
                 i = split.index('from')
                 src = split[i+1]
                 tgt = split[i+3].rstrip()
@@ -297,12 +297,12 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
                 if(len(numberOfOEs) == 0):
                     numberOfOEs += [len(containerArrivalRate)]
                     numberOfOEsT += [0]
-                if(split[6] == 'scale-in'):
+                if(split[8] == 'scale-in'):
                     numberOfOEs += [numberOfOEs[-1]]
                     numberOfOEsT += [time]
                     numberOfOEs += [numberOfOEs[-1] - 1]
                     numberOfOEsT += [time]
-                if(split[6] == 'scale-out'):
+                if(split[8] == 'scale-out'):
                     numberOfOEs += [numberOfOEs[-1]]
                     numberOfOEsT += [time]
                     numberOfOEs += [numberOfOEs[-1] + 1]
