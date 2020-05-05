@@ -515,7 +515,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
                 axes.set_xticks(xticks)
                 # axes.set_xticklabels(xlabels)
                 #axes.set_yscale('log')
-                axes.set_ylim([1, 10000])
+                # axes.set_ylim([1, 10000])
                 #axes.set_yticks([1, 10, 100, 1000, 10000, 100000])
                 import matplotlib.ticker as ticker
                 #axes.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
@@ -758,7 +758,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
     plt.grid(True)
     axes = plt.gca()
     axes.set_xlim(xaxes)
-    axes.set_ylim([0,100000])
+    # axes.set_ylim([0,100000])
     plt.xlabel('Index (s)')
     plt.ylabel('Rate (messages per second)')
     plt.title('Total Arrival Rate')
