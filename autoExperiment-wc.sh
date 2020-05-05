@@ -52,7 +52,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-wc.sh ${N} ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 0
+    ${FLINK_APP_DIR}/submit-wc.sh ${N} ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
 }
 
 # clsoe flink clsuter
@@ -102,7 +102,7 @@ for AVGRATE in 6000 8000 10000; do # 50000 100000
         #for repeat in 1 2 3; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=WC-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
+            EXP_NAME=WC-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
             echo ${EXP_NAME}
 
             cleanEnv
