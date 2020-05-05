@@ -52,7 +52,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 0
+    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} ${Window} 0
 }
 
 # clsoe flink clsuter
@@ -84,7 +84,7 @@ SUMRUNTIME=730
 
 # set in Flink app
 RATE=0
-CYCLE=60
+CYCLE=120
 N=5
 AVGRATE=6000
 #RATE=100000
@@ -92,13 +92,14 @@ WARMUP=60
 Psource=5
 repeat=1
 
-#for RATE in 5000 10000; do # 50000 100000
-for RATE in 2000; do # 0 5000 10000 15000 20000 25000 30000
-    for CYCLE in 120; do # 60 75 90 105 120
-        for repeat in 1 2 3 4 5 6 7 8 9; do # only used for repeat exps, no other usage
+for RATE in 4000 6000; do # 50000 100000
+#for RATE in 50000 100000 150000; do # 0 5000 10000 15000 20000 25000 30000
+    for Window in 3600; do # 60 75 90 105 120
+    for CYCLE in 60 90 120; do
+        #for repeat in 1 2 3; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
+            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
             echo ${EXP_NAME}
 
             cleanEnv
