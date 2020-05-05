@@ -43,3 +43,4 @@ public class RateControlledSourceFunction extends RichParallelSourceFunction<Str
         running = false;
     }
 }
+

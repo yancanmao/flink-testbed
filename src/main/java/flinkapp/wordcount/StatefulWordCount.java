@@ -1,14 +1,11 @@
 package flinkapp.wordcount;
 
 import Nexmark.sinks.DummySink;
+import flinkapp.wordcount.sources.RateControlledSourceFunction;
 import flinkapp.wordcount.sources.RateControlledSourceFunctionKV;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
@@ -16,12 +13,10 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.runtime.state.memory.MemoryStateBackend;
-import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.apache.flink.util.Collector;
 
 public class StatefulWordCount {
@@ -34,57 +29,43 @@ public class StatefulWordCount {
 		// set up the execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
+		env.setStateBackend(new MemoryStateBackend(100000000));
 
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
+		env.disableOperatorChaining();
 
-		env.enableCheckpointing(1000);
-		env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
-
-		FlinkKafkaProducer011<String> kafkaProducer = new FlinkKafkaProducer011<String>(
-				"localhost:9092", "word_count_output", new SimpleStringSchema());
-		kafkaProducer.setWriteTimestampToKafka(true);
+		final int srcRate = params.getInt("srcRate", 100000);
+		final int srcCycle = params.getInt("srcCycle", 60);
+		final int srcBase = params.getInt("srcBase", 0);
+		final int srcWarmUp = params.getInt("srcWarmUp", 100);
+		final int sentenceSize = params.getInt("sentence-size", 100);
 
 		final DataStream<Tuple2<String, String>> text = env.addSource(
 				new RateControlledSourceFunctionKV(
-						params.getInt("source-rate", 150),
-						params.getInt("sentence-size", 100)))
+						srcRate, srcCycle, srcBase, srcWarmUp*1000, sentenceSize))
 				.uid("sentence-source")
-					.setParallelism(params.getInt("p1", 1));
+				.setParallelism(params.getInt("p1", 1))
+				.setMaxParallelism(params.getInt("mp2", 64))
+				.keyBy(0);
 
 		// split up the lines in pairs (2-tuples) containing:
-		// (w`ord,1)
-		DataStream<Tuple2<String, Long>> counts = text.keyBy(0)
-                .flatMap(new Tokenizer())
+		// (word,1)
+		DataStream<Tuple2<String, Long>> counts = text
+				.flatMap(new Tokenizer())
 				.name("Splitter FlatMap")
 				.uid("flatmap")
-					.setParallelism(params.getInt("p2", 3))
+				.setParallelism(params.getInt("p2", 1))
+				.setMaxParallelism(params.getInt("mp2", 64))
 				.keyBy(0)
 				.flatMap(new CountWords())
 				.name("Count")
 				.uid("count")
-					.setParallelism(params.getInt("p3", 1));
+				.setParallelism(params.getInt("p3", 1))
+				.setMaxParallelism(params.getInt("mp2", 64));
 
 		GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
 		// write to dummy sink
-
-//		counts
-//			.keyBy(0)
-//			.map(new MapFunction<Tuple2<String,Long>, String>() {
-//				@Override
-//				public String map(Tuple2<String, Long> tuple) {
-//					return tuple.f0;
-//				}
-//			})
-//			.name("Projector")
-//			.uid("projector")
-//				.setParallelism(params.getInt("p4", 1))
-//			.addSink(kafkaProducer)
-//			.name("Sink")
-//			.uid("sink")
-//				.setParallelism(params.getInt("p5", 1));
-
 		counts.transform("Latency Sink", objectTypeInfo,
 				new DummySink<>())
 				.uid("dummy-sink")
@@ -98,30 +79,16 @@ public class StatefulWordCount {
 	// USER FUNCTIONS
 	// *************************************************************************
 
-	public static final class Tokenizer extends RichFlatMapFunction<Tuple2<String, String>, Tuple2<String, Long>> {
+	public static final class Tokenizer implements FlatMapFunction<Tuple2<String, String>, Tuple2<String, Long>> {
 		private static final long serialVersionUID = 1L;
-
-        private transient MapState<String, Long> countMap;
-
-        @Override
-        public void open(Configuration config) {
-            MapStateDescriptor<String, Long> descriptor =
-                    new MapStateDescriptor<>("splitter", String.class, Long.class);
-
-            countMap = getRuntimeContext().getMapState(descriptor);
-        }
 
 		@Override
 		public void flatMap(Tuple2<String, String> value, Collector<Tuple2<String, Long>> out) throws Exception {
-//			long curTime = System.currentTimeMillis();
-//			while (System.currentTimeMillis() - curTime < 1) {}
-
 			// normalize and split the line
 			String[] tokens = value.f1.toLowerCase().split("\\W+");
 
-			Long cur = countMap.get(value.f0);
-			cur = (cur == null) ? 1 : cur + 1;
-			countMap.put(value.f0, cur);
+			long start = System.nanoTime();
+			while (System.nanoTime() - start < 100000) {} // simulate at most 100k sentences per
 
 			// emit the pairs
 			for (String token : tokens) {
@@ -150,9 +117,11 @@ public class StatefulWordCount {
 
 		@Override
 		public void flatMap(Tuple2<String, Long> value, Collector<Tuple2<String, Long>> out) throws Exception {
-//			count.add(value.f1);
-			long curTime = System.currentTimeMillis();
-//			while (System.currentTimeMillis() - curTime < 1) {}
+			count.add(value.f1);
+
+			long start = System.nanoTime();
+			while (System.nanoTime() - start < 10000) {}
+
 			out.collect(new Tuple2<>(value.f0, count.get()));
 		}
 

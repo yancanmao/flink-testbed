@@ -1,6 +1,7 @@
 package stock;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.flink.api.common.functions.Partitioner;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
@@ -79,6 +80,7 @@ public class InAppStatefulStockExchange {
                 .setParallelism(params.getInt("p1", 1))
                 .setMaxParallelism(params.getInt("mp2", 64));
 
+
         // split up the lines in pairs (2-tuples) containing:
         DataStream<Tuple2<String, String>> counts = text.keyBy(0)
                 .flatMap(new MatchMaker())
@@ -140,8 +142,8 @@ public class InAppStatefulStockExchange {
 
             Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
 
-            latency += System.currentTimeMillis() - value.f2;
-            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
+//            latency += System.currentTimeMillis() - value.f2;
+//            System.out.println("stock_id: " + value.f0 + " arrival_ts: " + value.f2 + " completion_ts: " + System.currentTimeMillis());
 
             out.collect(new Tuple2<>(value.f0, value.f1));
         }
@@ -154,11 +156,11 @@ public class InAppStatefulStockExchange {
             }
             if (direction.equals("S")) {
 //                stockExchangeMapSell.put(orderArr[Sec_Code], String.join("|", orderArr));
-                stockExchangeMapSell.put(orderArr[Sec_Code], String.join("|", orderArr));
+                stockExchangeMapSell.put(orderArr[Order_No], String.join("|", orderArr));
                 matchedResult = tradeSell(orderArr, stockExchangeMapBuy);
             } else {
 //                stockExchangeMapBuy.put(orderArr[Sec_Code], String.join("|", orderArr));
-                stockExchangeMapBuy.put(orderArr[Sec_Code], String.join("|", orderArr));
+                stockExchangeMapBuy.put(orderArr[Order_No], String.join("|", orderArr));
                 matchedResult = tradeBuy(orderArr, stockExchangeMapSell);
             }
             return matchedResult;
@@ -277,6 +279,14 @@ public class InAppStatefulStockExchange {
             if (delay < 0) delay = 6000000;
             Long start = System.nanoTime();
             while (System.nanoTime() - start < delay) {}
+        }
+    }
+
+    public static class MyPartitioner implements Partitioner<String> {
+        @Override
+        public int partition(String key, int numPartitions) {
+            System.out.println("++++++ partitions: " + numPartitions);
+            return Integer.valueOf(key) % numPartitions;
         }
     }
 }

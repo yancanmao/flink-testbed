@@ -1,5 +1,6 @@
 package flinkapp.wordcount.sources;
 
+import Nexmark.sources.Util;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 
@@ -8,7 +9,7 @@ import static java.lang.Thread.sleep;
 public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<Tuple2<String, String>> {
 
     /** how many sentences to output per second **/
-    private int sentenceRate;
+    private int rate;
 //    private final int sentenceRate;
 
     /** the length of each sentence (in chars) **/
@@ -18,67 +19,61 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
 
     private volatile boolean running = true;
 
-    private static final int NUM_LETTERS = 128;
+    private int cycle = 60;
+    private int base = 0;
+    private int warmUpInterval = 100000;
 
-    public RateControlledSourceFunctionKV(int rate, int size) {
-        sentenceRate = rate;
+    public RateControlledSourceFunctionKV(int srcRate, int size) {
+        rate = srcRate;
+        generator = new RandomSentenceGenerator();
+        sentenceSize = size;
+    }
+
+    public RateControlledSourceFunctionKV(int srcRate, int cycle, int base, int warmUpInterval, int size) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
+        this.warmUpInterval = warmUpInterval;
         generator = new RandomSentenceGenerator();
         sentenceSize = size;
     }
 
     @Override
     public void run(SourceContext<Tuple2<String, String>> ctx) throws Exception {
-
-        // interval to increase or descrease input rate
-        int interval = 30000;
-        int interval2 = 100000;
+        int epoch = 0;
         int count = 0;
-        boolean isInc = true;
-        boolean inc = true;
-        boolean inc2 = true;
-        int incTimes = 0;
-        long intervalStartTime = System.currentTimeMillis();
+        int curRate = base + rate;
+
+        // warm up
+        Thread.sleep(10000);
+
+        long startTs = System.currentTimeMillis();
 
         while (running) {
-
-//            System.out.println("++++++++++++sdasd: " + count);
-//
-//            if (count >= interval && inc) {
-//                System.out.println("increase input rate");
-//                sentenceRate += 500;
-//                inc = false;
-//            }
-//
-//            if (count >= interval2 && inc2) {
-//                System.out.println("increase input rate");
-//                sentenceRate += 1000;
-//                inc2 = false;
-//            }
-
             long emitStartTime = System.currentTimeMillis();
-            int cur = 0;
-            for (int i = 0; i < sentenceRate/50; i++) {
-                ctx.collect(Tuple2.of(getChar(cur), generator.nextSentence(sentenceSize)));
-                cur++;
-                count++;
-            }
-            // Sleep for the rest of timeslice if needed
-            long emitTime = System.currentTimeMillis() - emitStartTime;
-            if (emitTime < 1000/50) {
-                sleep(1000/50 - emitTime);
-            }
+            if (System.currentTimeMillis() - startTs < warmUpInterval) {
+                for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
+                    ctx.collect(Tuple2.of(getKey(), generator.nextSentence(sentenceSize)));
+                }
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
+            } else {
+                if (count == 20) {
+                    // change input rate every 1 second.
+                    epoch++;
+                    curRate = base + Util.changeRateSin(rate, cycle, epoch);
+                    System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
+                    count = 0;
+                }
 
-
-//            if (System.currentTimeMillis() - intervalStartTime > interval && incTimes < 4) {
-//                sentenceRate = isInc ? sentenceRate + 500 : sentenceRate - 500;
-//                intervalStartTime = System.currentTimeMillis();
-////                isInc = !isInc;
-//                incTimes++;
-//                System.out.println("current input rate is: " +  sentenceRate);
-//            }
+                for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
+                    ctx.collect(Tuple2.of(getKey(), generator.nextSentence(sentenceSize)));
+                }
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
+            }
+            ctx.close();
         }
-
-        ctx.close();
     }
 
     @Override
@@ -86,7 +81,7 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
         running = false;
     }
 
-    private static String getChar(int cur) {
-        return String.valueOf(Math.random()%1024);
+    private static String getKey() {
+        return String.valueOf(Math.random());
     }
 }

@@ -76,7 +76,7 @@ public class Query5Keyed {
         DataStream<Tuple2<Long, Long>> windowed = bids.keyBy(new KeySelector<Tuple2<Long, Bid>, Long>() {
             @Override
             public Long getKey(Tuple2<Long, Bid> bid) throws Exception {
-                return bid.f1.auction;
+                return bid.f0;
             }
         }).timeWindow(Time.seconds(10), Time.seconds(1))
                 .aggregate(new CountBids())

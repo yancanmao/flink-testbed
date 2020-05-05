@@ -72,10 +72,10 @@ def parseContainerArrivalRate(split, base):
                 containerArrivalRate[Id] = []
                 containerArrivalRateT[Id] = []
             containerArrivalRate[Id] += [float(value)* 1000]
-            containerArrivalRateT[Id] += [(long(time) - initialTime)/base - warmup*10]
-            if( (long(time) - initialTime)/base - warmup*10 not in totalArrivalRate):
-                totalArrivalRate[(long(time) - initialTime)/base - warmup*10] = 0.0
-            totalArrivalRate[(long(time) - initialTime)/base - warmup*10] += float(value) * 1000
+            containerArrivalRateT[Id] += [(long(time) - initialTime)/base ]
+            if( (long(time) - initialTime)/base  not in totalArrivalRate):
+                totalArrivalRate[(long(time) - initialTime)/base ] = 0.0
+            totalArrivalRate[(long(time) - initialTime)/base ] += float(value) * 1000
 
 def parseContainerServiceRate(split, base):
     global initialTime
@@ -97,7 +97,7 @@ def parseContainerServiceRate(split, base):
                 containerServiceRate[Id] = []
                 containerServiceRateT[Id] = []
             containerServiceRate[Id] += [float(value)* 1000]
-            containerServiceRateT[Id] += [(long(time) - initialTime)/base - warmup*10]
+            containerServiceRateT[Id] += [(long(time) - initialTime)/base ]
 
 def parseContainerWindowDelay(split, base):
     global initialTime, overallWindowDelayT, overallWindowDelay
@@ -118,10 +118,10 @@ def parseContainerWindowDelay(split, base):
                 containerWindowDelay[Id] = []
                 containerWindowDelayT[Id] = []
             containerWindowDelay[Id] += [float(value)]
-            containerWindowDelayT[Id] += [(long(time) - initialTime)/base - warmup*10]
+            containerWindowDelayT[Id] += [(long(time) - initialTime)/base ]
 
-            if(len(overallWindowDelayT) == 0 or overallWindowDelayT[-1] < (long(time) - initialTime)/base - warmup*10):
-                overallWindowDelayT += [(long(time) - initialTime)/base - warmup*10]
+            if(len(overallWindowDelayT) == 0 or overallWindowDelayT[-1] < (long(time) - initialTime)/base ):
+                overallWindowDelayT += [(long(time) - initialTime)/base ]
                 overallWindowDelay += [float(value)]
             elif(overallWindowDelay[-1] < float(value)):
                 overallWindowDelay[-1] = float(value)
@@ -148,7 +148,7 @@ def parseContainerLongtermDelay(split, base):
             if(value>1000000): value = 1000000
             elif(value<0): value = 0
             containerLongtermDelay[Id] += [float(value)]
-            containerLongtermDelayT[Id] += [(long(time) - initialTime)/base - warmup*10]
+            containerLongtermDelayT[Id] += [(long(time) - initialTime)/base ]
 
 def readContainerRealWindowDelay(Id):
     global initialTime, overallWindowDelayT, overallWindowDelay, overallRealWindowDelayT, overallRealWindowDelay, userWindowSize
@@ -170,7 +170,7 @@ def readContainerRealWindowDelay(Id):
                 partition = split[0]
                 processed += 1
                 time = split[2]
-                time = (long(time) - initialTime)/base - warmup*10
+                time = (long(time) - initialTime)/base
                 queue += [[time, float(split[1])]]
                 total += float(split[1])
                 while(queue[0][0] < time - userWindowSize):
