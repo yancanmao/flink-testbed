@@ -59,4 +59,9 @@ class Order implements Serializable {
     void updateOrder(int otherOrderVol) {
         orderVol = (this.getOrderVol() - otherOrderVol);
     }
+
+    @Override
+    public String toString() {
+        return orderNo + "|" + orderPrice + "|" + orderVol;
+    }
 }
