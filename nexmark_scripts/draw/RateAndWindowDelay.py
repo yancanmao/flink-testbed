@@ -21,8 +21,8 @@ MARKERSIZE=4
 def draw(deltaT, jobname, warmup, runtime, jobid):
     #jobname = '4h_16_L5T5l120'
     retValue = []
-    input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
-    # input_file ='/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/exp0427/' + jobname + '/flink-samza-standalonesession-0-camel-sane.out'
+    # input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
+    input_file ='/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + jobname + '/flink-samza-standalonesession-0-camel-sane.out'
     output_path = 'figures/' + jobname + '/'
     xaxes = [0000, runtime]
     import numpy as np
@@ -138,7 +138,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
                     total += int(value)
                 if long(time) not in totalArrivedProcessed:
                     totalArrivedProcessed[long(time)] = {}
-                totalArrivedProcessed[long(time)][split[5]] = total
+                totalArrivedProcessed[long(time)][split[8]] = total
 
     def parseContainerWindowDelay(split, base, containerWindowDelay, containerWindowDelayT, overallWindowDelay, overallWindowDelayT):
         time = split[2]
@@ -280,14 +280,14 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
             if (split[2] == 'Number' and split[4] == 'severe' and split[1] == jobid):
                 time = int(lines[i-1].split(' ')[2])
                 numberOfSevereT += [time]
-                numberOfSevere += [int(split[4])]
+                numberOfSevere += [int(split[6])]
 
             if (split[2] == 'Executors' and split[3] == 'stopped' and split[1] == jobid):
                 i = split.index('from')
                 src = split[i+1]
                 tgt = split[i+3].rstrip()
                 print('Migration complete from ' + src + ' to ' + tgt)
-                time = (long(split[4]) - initialTime)/base
+                time = (long(split[6]) - initialTime)/base
                 if(src not in migrationDeployTime):
                     migrationDeployTime[src] = []
                 migrationDeployTime[src] += [time]

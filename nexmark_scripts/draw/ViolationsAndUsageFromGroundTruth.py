@@ -33,8 +33,8 @@ calculateInterval = [0, runtime]  # The interval we calculate violation percenta
 # totalLength = 7100
 substreamAvgLatency = {}  # Dict { substreamId : [[Arrival, Completed]...]}
 
-inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
-# inputDir = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + figureName + '/'
+# inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
+inputDir = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + figureName + '/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 
@@ -279,7 +279,7 @@ print('Execept warm up avg success rate=', successRate)
 # print >> f, ('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
 
 from RateAndWindowDelay import draw as ratedraw
-retValue = ratedraw(100, figureName, warmup, runtime) # [AvgOEs, NumLB, NumSI, NumSO]
+retValue = ratedraw(100, figureName, warmup, runtime, jobid) # [AvgOEs, NumLB, NumSI, NumSO]
 
 # # parse figurename and get configurations
 # def parseName(figureName):
