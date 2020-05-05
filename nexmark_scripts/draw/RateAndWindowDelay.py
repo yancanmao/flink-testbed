@@ -811,6 +811,6 @@ if __name__ == "__main__":
     jobname = sys.argv[1]
     warmup = int(sys.argv[2])
     runtime = int(sys.argv[3])
-    jobid = int(sys.argv[4])
+    jobid = sys.argv[4]
     draw(100, jobname, warmup, runtime, jobid)
 

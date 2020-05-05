@@ -23,7 +23,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 figureName = sys.argv[1]
 warmup = int(sys.argv[2])
 runtime = int(sys.argv[3])
-jobid = int(sys.argv[4])
+jobid = sys.argv[4]
 
 userLatency = 1000
 userWindow = 1000
