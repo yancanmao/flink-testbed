@@ -706,7 +706,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
     import os
     if not os.path.exists(output_path):
         os.makedirs(output_path)
-    plt.savefig(output_path + jobname + '_NumberOfOE.png')
+    plt.savefig(output_path + jobid + '_NumberOfOE.png')
     plt.close(fig)
 
     #Calculate avg # of OEs
