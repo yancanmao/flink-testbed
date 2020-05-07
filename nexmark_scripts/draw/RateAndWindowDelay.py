@@ -813,4 +813,3 @@ if __name__ == "__main__":
     warmup = int(sys.argv[2])
     runtime = int(sys.argv[3])
     draw(100, jobname, warmup, runtime)
-
