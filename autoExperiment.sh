@@ -52,7 +52,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} ${Window} 0
+    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} ${Window} 1
 }
 
 # clsoe flink clsuter

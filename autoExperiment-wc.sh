@@ -52,7 +52,8 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-wc.sh ${N} ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
+    #${FLINK_APP_DIR}/submit-wc.sh ${N} ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
+    ${FLINK_APP_DIR}/submit-wc.sh ${N} 1 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 0
 }
 
 # clsoe flink clsuter
@@ -95,10 +96,10 @@ repeat=1
 operator1=c21234bcbf1e8eb4c61f1927190efebd
 operator2=b71731f1c0df9c3076c4a455334d0ad6
 
-for AVGRATE in 6000 8000 10000; do # 50000 100000
+for AVGRATE in 10000; do # 50000 100000
 #for RATE in 50000 100000 150000; do # 0 5000 10000 15000 20000 25000 30000
 #    for Window in 3600; do # 60 75 90 105 120
-    for CYCLE in 60 90 120; do
+    for CYCLE in 120; do
         #for repeat in 1 2 3; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
