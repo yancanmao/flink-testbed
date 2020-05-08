@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FLINK_DIR="/home/samza/workspace/flink-extended/build-target"
-FLINK_APP_DIR="/home/samza/workspace/flink-testbed"
+FLINK_DIR="/home/samza/workspace/flink-related/flink-extended-nexmark/build-target"
+FLINK_APP_DIR="/home/samza/workspace/flink-related/flink-testbed-nexmark"
 
 # clean kafka related data
 function cleanEnv() {
@@ -10,7 +10,7 @@ function cleanEnv() {
     ~/samza-hello-samza/bin/grid stop kafka
     ~/samza-hello-samza/bin/grid stop zookeeper
     kill -9 $(jps | grep Kafka | awk '{print $1}')
-    rm -r /data/kafka/kafka-logs/
+    rm -r /tmp/kafka-logs/
     rm -r /tmp/zookeeper/
 
     python -c 'import time; time.sleep(20)'
@@ -95,7 +95,7 @@ repeat=1
 #for RATE in 5000 10000; do # 50000 100000
 for RATE in 2000; do # 0 5000 10000 15000 20000 25000 30000
     for CYCLE in 120; do # 60 75 90 105 120
-        for repeat in 1 2 3 4 5 6 7 8 9; do # only used for repeat exps, no other usage
+        for repeat in 1; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
             EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
