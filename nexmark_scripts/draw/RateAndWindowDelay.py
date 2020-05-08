@@ -271,9 +271,9 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
                     print(src + ' !!! ' + tgt)
 
                     decisionT += [time]
-                    if(split[1] == 'Scale' and split[2] == 'in'):
+                    if(split[3] == 'Scale' and split[4] == 'in'):
                         decision += [-1]
-                    elif(split[1] == 'Scale' and split[2] == 'out'):
+                    elif(split[3] == 'Scale' and split[4] == 'out'):
                         decision += [1]
                     else:
                         decision += [0]
