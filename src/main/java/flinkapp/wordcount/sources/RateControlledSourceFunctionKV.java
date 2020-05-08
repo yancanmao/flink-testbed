@@ -71,6 +71,7 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
                 }
                 // Sleep for the rest of timeslice if needed
                 Util.pause(emitStartTime);
+                count++;
             }
             ctx.close();
         }
