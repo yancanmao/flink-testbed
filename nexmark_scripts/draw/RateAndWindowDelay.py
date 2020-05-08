@@ -21,8 +21,8 @@ MARKERSIZE=4
 def draw(deltaT, jobname, warmup, runtime, jobid):
     #jobname = '4h_16_L5T5l120'
     retValue = []
-    input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
-    # input_file ='/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + jobname + '/flink-samza-standalonesession-0-camel-sane.out'
+    # input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
+    input_file ='/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + jobname + '/flink-samza-standalonesession-0-camel-sane.out'
     output_path = 'figures/' + jobname + '/'
     xaxes = [0000, runtime]
     import numpy as np
@@ -805,6 +805,10 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
     plt.ylabel('Backlog (tuples)')
     plt.title('Overall backlog')
     plt.grid(True)
+
+    if not os.path.exists(output_path + jobid + '_backlog.png'):
+            os.makedirs(output_path + jobid + '_backlog.png')
+
     plt.savefig(output_path + jobid + '_backlog.png')
 
     return retValue
