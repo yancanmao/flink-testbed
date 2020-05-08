@@ -57,9 +57,8 @@ public class Query8 {
 
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//        new MemoryStateBackend(1024 * 1024 * 1024, false);
-//        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
-//        env.setStateBackend(new FsStateBackend("hdfs://camel:9000/flink/checkpoints"));
+
+        env.setStateBackend(new MemoryStateBackend(100000000));
 
 //        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
@@ -110,7 +109,7 @@ public class Query8 {
                         return a.seller;
                     }
                 })
-                        .window(TumblingEventTimeWindows.of(Time.milliseconds(1)))
+                        .window(TumblingEventTimeWindows.of(Time.seconds(1)))
                         .apply(new FlatJoinFunction<Person, Auction, Tuple3<Long, String, Long>>() {
                             @Override
                             public void join(Person p, Auction a, Collector<Tuple3<Long, String, Long>> out) {
