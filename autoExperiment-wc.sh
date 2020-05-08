@@ -96,7 +96,7 @@ repeat=1
 operator1=c21234bcbf1e8eb4c61f1927190efebd
 operator2=b71731f1c0df9c3076c4a455334d0ad6
 
-for RATE in 2000; do # 50000 100000
+for RATE in 4000 6000; do # 50000 100000
 #for RATE in 50000 100000 150000; do # 0 5000 10000 15000 20000 25000 30000
 #    for Window in 3600; do # 60 75 90 105 120
     for isTreat in 0 1; do
