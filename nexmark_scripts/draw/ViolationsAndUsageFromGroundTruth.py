@@ -223,7 +223,7 @@ plt.plot(figList)
 plt.xlabel('Timeslot Index')
 plt.ylabel('#substream violation')
 plt.title('Total substream violation')
-if not os.path.exists(outputFile):
+if not os.path.exists(outputDir):
     os.makedirs(outputDir)
 plt.savefig(outputFile)
 
