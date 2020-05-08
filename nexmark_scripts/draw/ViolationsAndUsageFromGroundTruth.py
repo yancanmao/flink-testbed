@@ -32,8 +32,8 @@ calculateInterval = [0, runtime]  # The interval we calculate violation percenta
 # totalLength = 7100
 substreamAvgLatency = {}  # Dict { substreamId : [[Arrival, Completed]...]}
 
-inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
-# inputDir = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + figureName + '/'
+# inputDir = '/home/samza/workspace/flink-related/flink-extended-nexmark/build-target/log/'
+inputDir = '/home/samza/workspace/flink-related/flink-testbed-nexmark/nexmark_scripts/draw/logs/' + figureName + '/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 
@@ -59,7 +59,7 @@ maxMigrationTime = 0
 maxMigrationExecutor = ""
 migrationTimes = []
 for fileName in listdir(inputDir):
-    if fileName == "flink-samza-taskexecutor-0-camel-sane.out":
+    if fileName == "flink-samza-taskexecutor-0-giraffe-sane.out":
         inputFile = inputDir + fileName
         counter = 0
         print("Processing file " + inputFile)
@@ -222,6 +222,10 @@ plt.plot(figList)
 plt.xlabel('Timeslot Index')
 plt.ylabel('#substream violation')
 plt.title('Total substream violation')
+
+if not os.path.exists(outputDir):
+    os.makedirs(outputDir)
+
 plt.savefig(outputFile)
 
 # Draw substream violation percetage histogram

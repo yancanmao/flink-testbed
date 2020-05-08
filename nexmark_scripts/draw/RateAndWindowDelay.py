@@ -21,8 +21,8 @@ MARKERSIZE=4
 def draw(deltaT, jobname, warmup, runtime):
     #jobname = '4h_16_L5T5l120'
     retValue = []
-    input_file = '/home/samza/workspace/flink-extended/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
-    # input_file ='/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/exp0427/' + jobname + '/flink-samza-standalonesession-0-camel-sane.out'
+    # input_file = '/home/samza/workspace/flink-related/flink-extended-nexmark/build-target/log/flink-samza-standalonesession-0-camel-sane.out'
+    input_file ='/home/samza/workspace/flink-related/flink-testbed-nexmark/nexmark_scripts/draw/logs/' + jobname + '/flink-samza-standalonesession-0-giraffe-sane.out'
     output_path = 'figures/' + jobname + '/'
     xaxes = [0000, runtime]
     import numpy as np

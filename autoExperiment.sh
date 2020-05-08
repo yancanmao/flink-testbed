@@ -52,7 +52,7 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 0
+    ${FLINK_APP_DIR}/submit-nexmark5.sh ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} ${Window} 1
 }
 
 # clsoe flink clsuter
@@ -93,12 +93,12 @@ Psource=5
 repeat=1
 
 #for RATE in 5000 10000; do # 50000 100000
-for RATE in 2000; do # 0 5000 10000 15000 20000 25000 30000
-    for CYCLE in 120; do # 60 75 90 105 120
-        for repeat in 1; do # only used for repeat exps, no other usage
+for RATE in 2000 4000 6000; do # 0 5000 10000 15000 20000 25000 30000
+    for CYCLE in 60 90 120; do # 60 75 90 105 120
+        for Window in 1; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
+            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
             echo ${EXP_NAME}
 
             cleanEnv
@@ -109,8 +109,8 @@ for RATE in 2000; do # 0 5000 10000 15000 20000 25000 30000
             python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
 
             # draw figure
-            draw
             closeFlink
+            draw
 
             ~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
             python -c 'import time; time.sleep(30)'
