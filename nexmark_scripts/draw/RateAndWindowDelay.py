@@ -278,10 +278,10 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
                     else:
                         decision += [0]
 
-                if (split[2] == 'Number' and split[4] == 'severe' and split[1] == jobid):
-                    time = int(lines[i-1].split(' ')[2])
-                    numberOfSevereT += [time]
-                    numberOfSevere += [int(split[6])]
+                # if (split[2] == 'Number' and split[4] == 'severe' and split[1] == jobid):
+                #     time = int(lines[i-1].split(' ')[2])
+                #     numberOfSevereT += [time]
+                #     numberOfSevere += [int(split[6])]
 
                 if (split[2] == 'Executors' and split[3] == 'stopped' and split[1] == jobid):
                     i = split.index('from')
