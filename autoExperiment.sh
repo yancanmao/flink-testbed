@@ -91,11 +91,12 @@ AVGRATE=6000
 WARMUP=60
 Psource=5
 repeat=1
+Window=2
 
 #for RATE in 5000 10000; do # 50000 100000
-for RATE in 4000 6000; do # 0 5000 10000 15000 20000 25000 30000
-    for CYCLE in 60 90 120; do # 60 75 90 105 120
-        for Window in 2; do # only used for repeat exps, no other usage
+for RATE in 6000; do # 0 5000 10000 15000 20000 25000 30000
+    for CYCLE in 120; do # 60 75 90 105 120
+        for isTreat in 0; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
             EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
