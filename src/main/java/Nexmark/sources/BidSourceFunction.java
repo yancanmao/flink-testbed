@@ -63,6 +63,20 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
     }
 
+    public BidSourceFunction(int srcRate, int cycle, int base, int warmUpInterval, int tupleSize) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
+        this.warmUpInterval = warmUpInterval;
+        NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
+        nexconfig.hotBiddersRatio=1;
+        nexconfig.hotAuctionRatio=1;
+        nexconfig.numInFlightAuctions=1;
+        nexconfig.numEventGenerators=1;
+        nexconfig.avgBidByteSize=tupleSize;
+        config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
+    }
+
     public BidSourceFunction(int srcRate) {
         this.rate = srcRate;
     }
