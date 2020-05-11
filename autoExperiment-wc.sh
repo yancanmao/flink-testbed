@@ -87,19 +87,19 @@ RATE=0
 CYCLE=120
 N1=10
 N2=20
-AVGRATE=6000
+AVGRATE=3333
 #RATE=100000
 WARMUP=60
-Psource=1
+Psource=5
 repeat=1
 
 operator1=c21234bcbf1e8eb4c61f1927190efebd
 operator2=b71731f1c0df9c3076c4a455334d0ad6
 
-for AVGRATE in 16667; do # 50000 100000
+for RATE in 833 1666 2500 333 1000; do # 50000 100000
 #for RATE in 50000 100000 150000; do # 0 5000 10000 15000 20000 25000 30000
-    for Psource in 5; do # 60 75 90 105 120
-    for isTreat in 1; do
+    for CYCLE in 120 90 60; do # 60 75 90 105 120
+        for isTreat in 0 1; do
         #for repeat in 1 2 3; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`

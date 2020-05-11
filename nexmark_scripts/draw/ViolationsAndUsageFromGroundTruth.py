@@ -33,12 +33,14 @@ calculateInterval = [0, runtime]  # The interval we calculate violation percenta
 # totalLength = 7100
 substreamAvgLatency = {"b71731f1c0df9c3076c4a455334d0ad6": {}, "c21234bcbf1e8eb4c61f1927190efebd": {}}  # Dict { operatorId : substreamId : [[Arrival, Completed]...]}
 
+numberOfOEsMap = {}
+
 # inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
 inputDir = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + figureName + '/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 
-keyAverageLatencyFlag = True
+keyAverageLatencyFlag = False
 keyAverageLatencyThreshold = 0.2
 keyLatencyIntervalFlag = False
 calibrateFlag = False
@@ -219,7 +221,6 @@ def operator_ground_truth(jobid):
     legend = ['Total substream violation']
     figList = []
     for substreamList in totalViolationSubstream:
-        print(substreamList)
         figList.append(len(totalViolationSubstream[substreamList]))
     fig = plt.figure(figsize=(16, 9))
     plt.plot(figList)
@@ -275,14 +276,26 @@ def operator_ground_truth(jobid):
     successRate = 1 - violationNotPeak / float(timeNotPeak)
     print('Execept warm up avg success rate=', successRate)
     # print >> f, ('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
-    retValue = ratedraw(100, figureName, warmup, runtime, jobid)  # [AvgOEs, NumLB, NumSI, NumSO]
+    retValue = ratedraw(100, figureName, warmup, runtime, jobid)  # [AvgOEs, NumLB, NumSI, NumSO, OEsList]
     # # parse figurename and get configurations
     # def parseName(figureName):
     #
+
+
+    if len(retValue[4]) >= runtime:
+        numberOfOEsMap[jobid] = retValue[4][warmup:runtime]
+    else:
+        numberOfOEsMap[jobid] = retValue[4][warmup:]
+
+    # print(numberOfOEsMap[jobid])
+
+    maxOEs = max(numberOfOEsMap[jobid])
+    minOEs = min(numberOfOEsMap[jobid])
+
     stats_logs_path = outputDir + 'stats.txt'
     with open(stats_logs_path, 'a') as f:
-        f.write("%s\t%s\t%d\t%d\t%d\t%s\t%.15f\n" %
-                (figureName, jobid, retValue[1], retValue[2], retValue[3], retValue[0], successRate))
+        f.write("%s\t%s\t%d\t%d\t%d\t%s\t%d-%d\t%.15f\n" %
+                (figureName, jobid, retValue[1], retValue[2], retValue[3], retValue[0], minOEs, maxOEs, successRate))
     # Calculate avg latency
     if (False):
         print("Calculate avg lantecy")
@@ -344,12 +357,25 @@ def app_ground_truth():
     wholeViolation = totalViolation/float(timeWithoutPeak)
     print('whole graph violation: ', wholeViolation)
     print('interval: ' , timeWithoutPeak, ' num of violation: ', totalViolation, ' whole graph success rate: ', 1 - wholeViolation)
+
+    sumNumOfOEs = {}
+    for jobid in numberOfOEsMap:
+        if len(numberOfOEsMap[jobid]) < runtime-warmup:
+            print("wrong...")
+        for idx, oes in enumerate(numberOfOEsMap[jobid]):
+            if idx not in sumNumOfOEs:
+                sumNumOfOEs[idx] = 0
+            sumNumOfOEs[idx] += oes
+    # print(sumNumOfOEs.values())
+
     stats_logs_path = outputDir + 'stats.txt'
     with open(stats_logs_path, 'a') as f:
-        f.write("whole graph success rate: %.15f\n" %
-                (1 - wholeViolation))
+        f.write("whole graph success rate: %.15f, min-max OEs: %d-%d\n" %
+                (1 - wholeViolation, min(sumNumOfOEs.values()), max(sumNumOfOEs.values())))
 
 for jobid in substreamAvgLatency:
     operator_ground_truth(jobid)
+
+
 
 app_ground_truth()

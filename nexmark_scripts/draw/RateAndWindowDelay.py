@@ -12,7 +12,7 @@ BIGGER_SIZE = 35
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
 plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # font-size of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
@@ -695,7 +695,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
     plt.legend(legend, loc='upper left')
     plt.grid(True)
     axes = plt.gca()
-    maxOEs = 10
+    maxOEs = max(numberOfOEs)
     axes.set_yticks(np.arange(0, maxOEs))
     axes.set_xlim([xaxes[0] , xaxes[1]])
     #axes.set_xticks(xticks)
@@ -712,8 +712,13 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
 
     #Calculate avg # of OEs
     sumOEs = 0
+    nOEsList = []
     for i in range(1, len(numberOfOEsT)):
-        sumOEs += numberOfOEs[i] * (min(xaxes[1], numberOfOEsT[i]) - min(xaxes[1],numberOfOEsT[i-1]))
+        endIdx = int(min(xaxes[1], numberOfOEsT[i]))
+        startidx = int(min(xaxes[1],numberOfOEsT[i-1]))
+        sumOEs += numberOfOEs[i] * (endIdx - startidx)
+        for idx in range(startidx, endIdx):
+            nOEsList += [numberOfOEs[i]]
     avgOEs = sumOEs / float(min(xaxes[1], numberOfOEsT[-1]) - numberOfOEsT[0])
     print("Avg number of OEs=" + str(avgOEs))
     retValue += [str(avgOEs)]
@@ -730,7 +735,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
             else:
                 numScaleIn += 1
     print("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
-    retValue += [numLoadBalance, numScaleIn, numScaleOut]
+    retValue += [numLoadBalance, numScaleIn, numScaleOut, nOEsList]
 
     # save stats to file
     # stats_logs_path = output_path + 'stats.txt'
@@ -789,6 +794,8 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
 
     for timestamp in totalArrivedProcessed:
         arrivedProcessed = totalArrivedProcessed[timestamp]
+        if "Arrived:" not in arrivedProcessed or "Completed:" not in arrivedProcessed:
+            continue
         if arrivedProcessed["Arrived:"] == -1 or arrivedProcessed["Completed:"] == -1:
             continue
         if timestamp > runtime*10:
