@@ -39,7 +39,7 @@ public class StatefulWordCount {
 		final int srcCycle = params.getInt("srcCycle", 60);
 		final int srcBase = params.getInt("srcBase", 0);
 		final int srcWarmUp = params.getInt("srcWarmUp", 100);
-		final int sentenceSize = params.getInt("sentence-size", 100);
+		final int sentenceSize = params.getInt("sentence-size", 200);
 
 		final DataStream<Tuple2<String, String>> text = env.addSource(
 				new RateControlledSourceFunctionKV(
@@ -88,7 +88,7 @@ public class StatefulWordCount {
 			String[] tokens = value.f1.toLowerCase().split("\\W+");
 
 			long start = System.nanoTime();
-			while (System.nanoTime() - start < 100000) {} // simulate at most 100k sentences per
+			while (System.nanoTime() - start < 600000) {} // simulate at most 100k sentences per minute
 
 			// emit the pairs
 			for (String token : tokens) {
@@ -120,7 +120,7 @@ public class StatefulWordCount {
 			count.add(value.f1);
 
 			long start = System.nanoTime();
-			while (System.nanoTime() - start < 10000) {}
+			while (System.nanoTime() - start < 60000) {} // simulate at most 1M sentences per minute
 
 			out.collect(new Tuple2<>(value.f0, count.get()));
 		}
