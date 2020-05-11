@@ -52,8 +52,8 @@ function runFlink() {
 
 # run applications
 function runApp() {
-    #${FLINK_APP_DIR}/submit-wc.sh ${N} ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
-    ${FLINK_APP_DIR}/submit-wc.sh ${N} ${N} 64 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
+    #${FLINK_APP_DIR}/submit-wc.sh ${N} ${N} 128 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
+    ${FLINK_APP_DIR}/submit-wc.sh ${N1} ${N2} 128 ${RATE} ${CYCLE} ${BASE} ${WARMUP} ${Psource} 1
 }
 
 # clsoe flink clsuter
@@ -74,7 +74,7 @@ function draw() {
 }
 
 # set in Flink
-L=2000
+L=1000
 l_low=100
 l_high=100
 isTreat=1
@@ -85,24 +85,25 @@ SUMRUNTIME=730
 # set in Flink app
 RATE=0
 CYCLE=120
-N=10
+N1=10
+N2=20
 AVGRATE=6000
 #RATE=100000
 WARMUP=60
-Psource=5
+Psource=1
 repeat=1
 
 operator1=c21234bcbf1e8eb4c61f1927190efebd
 operator2=b71731f1c0df9c3076c4a455334d0ad6
 
-for AVGRATE in 3333; do # 50000 100000
+for AVGRATE in 16667; do # 50000 100000
 #for RATE in 50000 100000 150000; do # 0 5000 10000 15000 20000 25000 30000
-    for CYCLE in 120; do # 60 75 90 105 120
-    for isTreat in 0 1; do
+    for Psource in 5; do # 60 75 90 105 120
+    for isTreat in 1; do
         #for repeat in 1 2 3; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=WC-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
+            EXP_NAME=WC-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N1${N1}N2${N2}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
             echo ${EXP_NAME}
 
             cleanEnv
