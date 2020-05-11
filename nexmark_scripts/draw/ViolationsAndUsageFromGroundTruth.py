@@ -319,9 +319,10 @@ def app_ground_truth():
         violationInWarmUp += [0]
         totalInPeak += [0]
         warmUpIntervals[peakI] = [warmUpIntervals[peakI][0] * base / userWindow, warmUpIntervals[peakI][1] * base / userWindow]
-    xaxes = [calculateInterval[0] * 1000 / userWindow, calculateInterval[-1] * 1000 / userWindow]
+    # xaxes = [warmup * 1000 / userWindow, calculateInterval[-1] * 1000 / userWindow]
+    xaxes = [warmup * 1000 / userWindow, calculateInterval[-1] * 1000 / userWindow]
 
-    totalTime = (xaxes[1] - xaxes[0] + 1)
+    timeWithoutPeak = (xaxes[1] - xaxes[0] + 1)
 
     appAvglatency = {} # [timeslot -> avglatency]
     appNmetric = {}
@@ -340,9 +341,9 @@ def app_ground_truth():
         if xaxes[0] <= time <= xaxes[1] and appAvglatency[time] > userLatency:
             totalViolation += 1
 
-    wholeViolation = totalViolation/float(totalTime)
+    wholeViolation = totalViolation/float(timeWithoutPeak)
     print('whole graph violation: ', wholeViolation)
-    print('whole graph success rate: ', 1 - wholeViolation)
+    print('interval: ' , timeWithoutPeak, ' num of violation: ', totalViolation, ' whole graph success rate: ', 1 - wholeViolation)
     stats_logs_path = outputDir + 'stats.txt'
     with open(stats_logs_path, 'a') as f:
         f.write("whole graph success rate: %.15f\n" %

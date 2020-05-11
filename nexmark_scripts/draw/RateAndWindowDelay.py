@@ -722,7 +722,7 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
     numScaleOut = 0
     numLoadBalance = 0
     for i in range(0, len(decision)):
-        if(decisionT[i] <= xaxes[1] and decisionT[i] >= xaxes[0]):
+        if(decisionT[i] <= xaxes[1] and decisionT[i] >= xaxes[0] and decisionT[i] >= warmup):
             if(decision[i] == 0):
                 numLoadBalance += 1
             elif(decision[i] == 1):
@@ -787,26 +787,26 @@ def draw(deltaT, jobname, warmup, runtime, jobid):
     plt.savefig(output_path + jobid + '_WorstWindowDelay.png')
     plt.close(fig)
 
-#    for timestamp in totalArrivedProcessed:
-#        arrivedProcessed = totalArrivedProcessed[timestamp]
-#        if arrivedProcessed["Arrived:"] == -1 or arrivedProcessed["Completed:"] == -1:
-#            continue
-#        if timestamp > runtime*10:
-#            continue
-#        backlog = arrivedProcessed["Arrived:"] - arrivedProcessed["Completed:"]
-#        if backlog < 0:
-#            backlog = 0
-#        totalBacklog[timestamp] = backlog
+    for timestamp in totalArrivedProcessed:
+        arrivedProcessed = totalArrivedProcessed[timestamp]
+        if arrivedProcessed["Arrived:"] == -1 or arrivedProcessed["Completed:"] == -1:
+            continue
+        if timestamp > runtime*10:
+            continue
+        backlog = arrivedProcessed["Arrived:"] - arrivedProcessed["Completed:"]
+        if backlog < 0:
+            backlog = 0
+        totalBacklog[timestamp] = backlog
 
     # plot out backlog figure
-#    fig = plt.figure(figsize=(32,18))
-#    plt.plot(totalBacklog.keys(), totalBacklog.values())
-#    plt.xlabel('Index (100ms)')
-#    plt.ylabel('Backlog (tuples)')
-#    plt.title('Overall backlog')
-#    plt.grid(True)
+    fig = plt.figure(figsize=(32,18))
+    plt.plot(totalBacklog.keys(), totalBacklog.values())
+    plt.xlabel('Index (100ms)')
+    plt.ylabel('Backlog (tuples)')
+    plt.title('Overall backlog')
+    plt.grid(True)
 
-#    plt.savefig(output_path + jobid + '_backlog.png')
+    plt.savefig(output_path + jobid + '_backlog.png')
 
     return retValue
 if __name__ == "__main__":
