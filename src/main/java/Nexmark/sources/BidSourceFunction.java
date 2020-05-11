@@ -58,6 +58,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
         nexconfig.hotBiddersRatio=1;
         nexconfig.hotAuctionRatio=1;
+        nexconfig.hotSellersRatio=1;
         nexconfig.numInFlightAuctions=1;
         nexconfig.numEventGenerators=1;
         config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
@@ -71,6 +72,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
         nexconfig.hotBiddersRatio=1;
         nexconfig.hotAuctionRatio=1;
+        nexconfig.hotSellersRatio=1;
         nexconfig.numInFlightAuctions=1;
         nexconfig.numEventGenerators=1;
         nexconfig.avgBidByteSize=tupleSize;
@@ -108,7 +110,9 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
                             config.timestampAndInterEventDelayUsForEvent(
                                     config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                    ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
+                    Bid bid = BidGenerator.nextBid(nextId, rnd, eventTimestamp, config);
+                    System.out.println(bid.toString().length());
+                    ctx.collect(bid);
                     eventsCountSoFar++;
                 }
 
@@ -133,7 +137,9 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
                             config.timestampAndInterEventDelayUsForEvent(
                                     config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                    ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
+                    Bid bid = BidGenerator.nextBid(nextId, rnd, eventTimestamp, config);
+                    System.out.println(bid.toString().length());
+                    ctx.collect(bid);
                     eventsCountSoFar++;
                 }
 
