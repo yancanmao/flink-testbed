@@ -88,7 +88,7 @@ public class StatefulWordCount {
 			String[] tokens = value.f1.toLowerCase().split("\\W+");
 
 			long start = System.nanoTime();
-			while (System.nanoTime() - start < 500000) {} // simulate at most 100k sentences per minute
+			while (System.nanoTime() - start < 400000) {} // simulate at most 100k sentences per minute
 
 			// emit the pairs
 			for (String token : tokens) {
@@ -120,7 +120,7 @@ public class StatefulWordCount {
 			count.add(value.f1);
 
 			long start = System.nanoTime();
-			while (System.nanoTime() - start < 50000) {} // simulate at most 1M sentences per minute
+			while (System.nanoTime() - start < 40000) {} // simulate at most 1M sentences per minute
 
 			out.collect(new Tuple2<>(value.f0, count.get()));
 		}

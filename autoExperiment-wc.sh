@@ -106,20 +106,20 @@ for RATE in 833 1666 2500 333 1000; do # 50000 100000
             EXP_NAME=WC-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N1${N1}N2${N2}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
             echo ${EXP_NAME}
 
-            cleanEnv
-            configFlink
-            runFlink
-            runApp
+#            cleanEnv
+            #configFlink
+            #runFlink
+            #runApp
 
-            python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
+#            python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
 
             # draw figure
-            closeFlink
+            #closeFlink
             draw
 
-            ~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
-            python -c 'import time; time.sleep(30)'
-            kill -9 $(jps | grep ConsoleConsumer | awk '{print $1}')
+            #~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
+            #python -c 'import time; time.sleep(30)'
+            #kill -9 $(jps | grep ConsoleConsumer | awk '{print $1}')
         done
     done
 done
