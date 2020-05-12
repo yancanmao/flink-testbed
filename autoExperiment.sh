@@ -70,6 +70,7 @@ function closeFlink() {
 function draw() {
     #python2 ${FLINK_APP_DIR}/nexmark_scripts/draw/RateAndWindowDelay.py ${EXP_NAME} ${WARMUP} ${RUNTIME}
     python2 ${FLINK_APP_DIR}/nexmark_scripts/draw/ViolationsAndUsageFromGroundTruth.py ${EXP_NAME} ${WARMUP} ${RUNTIME}
+    java Solution ${EXP_NAME} > ./figures/${EXP_NAME}/migrationtime.txt
 }
 
 # set in Flink
@@ -95,12 +96,13 @@ repeat=1
 Window=2
 
 #for RATE in 5000 10000; do # 50000 100000
-for RATE in 6000; do # 0 5000 10000 15000 20000 25000 30000
+for RATE in 4000; do # 0 5000 10000 15000 20000 25000 30000
     for CYCLE in 120; do # 60 75 90 105 120
-        for TUPLESIZE in 1000 5000 10000; do # only used for repeat exps, no other usage
+        for Window in 10; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
+            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}S${TUPLESIZE}-${repeat}
+            #EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
             echo ${EXP_NAME}
 
             cleanEnv
@@ -110,7 +112,7 @@ for RATE in 6000; do # 0 5000 10000 15000 20000 25000 30000
 
             python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
 
-            # draw figure
+            #draw figure
             closeFlink
             draw
 
