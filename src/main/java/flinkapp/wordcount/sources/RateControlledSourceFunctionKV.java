@@ -60,7 +60,8 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
             } else {
                 if (count == 20) {
                     // change input rate every 1 second.
-                    epoch++;
+//                    epoch++;
+                    epoch = (int)((emitStartTime - startTs - warmUpInterval)/1000);
                     curRate = base + Util.changeRateSin(rate, cycle, epoch);
                     System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
                     count = 0;
@@ -76,6 +77,8 @@ public class RateControlledSourceFunctionKV extends RichParallelSourceFunction<T
             ctx.close();
         }
     }
+
+
 
     @Override
     public void cancel() {
