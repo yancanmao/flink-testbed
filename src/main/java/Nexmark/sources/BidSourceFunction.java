@@ -110,9 +110,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
                             config.timestampAndInterEventDelayUsForEvent(
                                     config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                    Bid bid = BidGenerator.nextBid(nextId, rnd, eventTimestamp, config);
-                    System.out.println(bid.toString().length());
-                    ctx.collect(bid);
+                    ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
                     eventsCountSoFar++;
                 }
 
@@ -121,7 +119,8 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
             } else { // after warm up
                 if (count == 20) {
                     // change input rate every 1 second.
-                    epoch++;
+//                    epoch++;
+                    epoch = (int)((emitStartTime - startTs - warmUpInterval)/1000);
                     curRate = base + Util.changeRateSin(rate, cycle, epoch);
                     System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
                     count = 0;
@@ -137,9 +136,7 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
                             config.timestampAndInterEventDelayUsForEvent(
                                     config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                    Bid bid = BidGenerator.nextBid(nextId, rnd, eventTimestamp, config);
-                    System.out.println(bid.toString().length());
-                    ctx.collect(bid);
+                    ctx.collect(BidGenerator.nextBid(nextId, rnd, eventTimestamp, config));
                     eventsCountSoFar++;
                 }
 

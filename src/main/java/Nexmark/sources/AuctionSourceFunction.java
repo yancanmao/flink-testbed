@@ -70,36 +70,58 @@ public class AuctionSourceFunction extends RichParallelSourceFunction<Auction> {
         int curRate = rate;
 
         // warm up
-        Thread.sleep(60000);
-        warmup(ctx);
+        Thread.sleep(10000);
+//        warmup(ctx);
+
+        long startTs = System.currentTimeMillis();
 
         while (running) {
             long emitStartTime = System.currentTimeMillis();
 
-            if (count == 20) {
-                // change input rate every 1 second.
-                epoch++;
-                curRate = base + Util.changeRateSin(rate, cycle, epoch);
-                System.out.println("epoch: " + epoch%cycle + " current rate is: " + curRate);
-                count = 0;
+            if (System.currentTimeMillis() - startTs < warmUpInterval) {
+                for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
+                    long nextId = nextId();
+                    Random rnd = new Random(nextId);
+
+                    // When, in event time, we should generate the event. Monotonic.
+                    long eventTimestamp =
+                            config.timestampAndInterEventDelayUsForEvent(
+                                    config.nextEventNumber(eventsCountSoFar)).getKey();
+
+                    ctx.collect(AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config));
+                    eventsCountSoFar++;
+                }
+
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
+            } else { // after warm up
+
+                if (count == 20) {
+                    // change input rate every 1 second.
+//                    epoch++;
+                    epoch = (int)((emitStartTime - startTs - warmUpInterval)/1000);
+                    curRate = base + Util.changeRateSin(rate, cycle, epoch);
+                    System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
+                    count = 0;
+                }
+
+                for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
+                    long nextId = nextId();
+                    Random rnd = new Random(nextId);
+
+                    // When, in event time, we should generate the event. Monotonic.
+                    long eventTimestamp =
+                            config.timestampAndInterEventDelayUsForEvent(
+                                    config.nextEventNumber(eventsCountSoFar)).getKey();
+
+                    ctx.collect(AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config));
+                    eventsCountSoFar++;
+                }
+
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
+                count++;
             }
-
-            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
-                long nextId = nextId();
-                Random rnd = new Random(nextId);
-
-                // When, in event time, we should generate the event. Monotonic.
-                long eventTimestamp =
-                        config.timestampAndInterEventDelayUsForEvent(
-                                config.nextEventNumber(eventsCountSoFar)).getKey();
-
-                ctx.collect(AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config));
-                eventsCountSoFar++;
-            }
-
-            // Sleep for the rest of timeslice if needed
-            Util.pause(emitStartTime);
-            count++;
         }
     }
 
