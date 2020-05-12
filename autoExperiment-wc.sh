@@ -24,10 +24,11 @@ function cleanEnv() {
 # configure parameters in flink bin
 function configFlink() {
     # set user requirement
-    sed 's/^\(\s*streamswitch.requirement.latency\s*:\s*\).*/\1'"$L"'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp
-    sed 's/^\(\s*streamswitch.system.l_low\s*:\s*\).*/\1'"$l_low"'/' tmp > tmp2
+    sed 's/^\(\s*streamswitch.requirement.latency.c21234bcbf1e8eb4c61f1927190efebd\s*:\s*\).*/\1'"$L1"'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp
+    sed 's/^\(\s*streamswitch.requirement.latency.b71731f1c0df9c3076c4a455334d0ad6\s*:\s*\).*/\1'"$L2"'/' tmp > tmp1
+    sed 's/^\(\s*streamswitch.system.l_low\s*:\s*\).*/\1'"$l_low"'/' tmp1 > tmp2
     sed 's/^\(\s*streamswitch.system.l_high\s*:\s*\).*/\1'"$l_high"'/' tmp2 > ${FLINK_DIR}/conf/flink-conf.yaml
-    rm tmp tmp2
+    rm tmp tmp1 tmp2
 
     # set static or streamswitch
     if [[ ${isTreat} == 1 ]]
@@ -74,7 +75,9 @@ function draw() {
 }
 
 # set in Flink
-L=1000
+L=2000
+L1=1000
+L2=1000
 l_low=100
 l_high=100
 isTreat=1
@@ -96,30 +99,31 @@ repeat=1
 operator1=c21234bcbf1e8eb4c61f1927190efebd
 operator2=b71731f1c0df9c3076c4a455334d0ad6
 
-for RATE in 833 1666 2500 333 1000; do # 50000 100000
+for RATE in 833 1666; do # 50000 100000
 #for RATE in 50000 100000 150000; do # 0 5000 10000 15000 20000 25000 30000
-    for CYCLE in 120 90 60; do # 60 75 90 105 120
-        for isTreat in 0 1; do
+    for L1 in 500 1000 1500; do # 60 75 90 105 120
+        for repeat in 1 2 3 4 5; do
         #for repeat in 1 2 3; do # only used for repeat exps, no other usage
+            L2=`expr ${L} - ${L1}`
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=WC-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N1${N1}N2${N2}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-${repeat}
+            EXP_NAME=WC-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N1${N1}N2${N2}-L1${L1}L2${L2}-T${isTreat}-R${RUNTIME}-${repeat}
             echo ${EXP_NAME}
 
-#            cleanEnv
-            #configFlink
-            #runFlink
-            #runApp
+            cleanEnv
+            configFlink
+            runFlink
+            runApp
 
-#            python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
+            python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
 
             # draw figure
-            #closeFlink
+            closeFlink
             draw
 
-            #~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
-            #python -c 'import time; time.sleep(30)'
-            #kill -9 $(jps | grep ConsoleConsumer | awk '{print $1}')
+            ~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
+            python -c 'import time; time.sleep(30)'
+            kill -9 $(jps | grep ConsoleConsumer | awk '{print $1}')
         done
     done
 done
