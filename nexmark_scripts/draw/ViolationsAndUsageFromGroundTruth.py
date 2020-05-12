@@ -25,7 +25,11 @@ figureName = sys.argv[1]
 warmup = int(sys.argv[2])
 runtime = int(sys.argv[3])
 
-userLatency = 1000
+userLatency1 = int(sys.argv[4])
+userLatency2 = int(sys.argv[5])
+
+userLatencyMap = {"b71731f1c0df9c3076c4a455334d0ad6": userLatency1, "c21234bcbf1e8eb4c61f1927190efebd": userLatency2}
+
 userWindow = 1000
 base = 1000  # timeslot size
 warmUpIntervals = [[0, warmup]]
@@ -36,7 +40,7 @@ substreamAvgLatency = {"b71731f1c0df9c3076c4a455334d0ad6": {}, "c21234bcbf1e8eb4
 numberOfOEsMap = {}
 
 # inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
-inputDir = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + figureName + '/'
+inputDir = '/home/samza/workspace/flink-related/flink-testbed-nexmark/nexmark_scripts/draw/logs/' + figureName + '/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 
@@ -106,6 +110,7 @@ for fileName in listdir(inputDir):
 print(maxMigrationTime, maxMigrationExecutor)
 
 def operator_ground_truth(jobid):
+    userLatency = userLatencyMap[jobid]
     totalTime = 0
     totalViolation = 0
     violationInWarmUp = []
@@ -300,7 +305,7 @@ def operator_ground_truth(jobid):
 
 def app_ground_truth():
     # sum avg latency of two job, and then calculate succ rate
-    userLatency = 2000
+    userLatency = userLatency1 + userLatency2
 
     appAvglatency = {} # [keygroup -> timeslot -> avglatency]
     for jobid in substreamAvgLatency:
@@ -467,6 +472,12 @@ def app_ground_truth():
     with open(stats_logs_path, 'a') as f:
         f.write("whole graph success rate: %.15f, min-max OEs: %d-%d\n" %
                 (successRate, min(sumNumOfOEs.values()), max(sumNumOfOEs.values())))
+
+def migration_time():
+    # read migration time from taskexecutor.out
+    # read life time from taskexecutor.log
+
+    pass
 
 for jobid in substreamAvgLatency:
     operator_ground_truth(jobid)
