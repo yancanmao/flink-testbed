@@ -28,14 +28,14 @@ runtime = int(sys.argv[3])
 userLatency1 = int(sys.argv[4])
 userLatency2 = int(sys.argv[5])
 
-userLatencyMap = {"c21234bcbf1e8eb4c61f1927190efebd": userLatency1, "b71731f1c0df9c3076c4a455334d0ad6": userLatency2}
+userLatencyMap = {"b71731f1c0df9c3076c4a455334d0ad6": userLatency1, "c21234bcbf1e8eb4c61f1927190efebd": userLatency2}
 
 userWindow = 1000
 base = 1000  # timeslot size
 warmUpIntervals = [[0, warmup]]
 calculateInterval = [0, runtime]  # The interval we calculate violation percentage from 1st tuple completed
 # totalLength = 7100
-substreamAvgLatency = {"c21234bcbf1e8eb4c61f1927190efebd": {}, "b71731f1c0df9c3076c4a455334d0ad6": {}}  # Dict { operatorId : substreamId : [[Arrival, Completed]...]}
+substreamAvgLatency = {"b71731f1c0df9c3076c4a455334d0ad6": {}, "c21234bcbf1e8eb4c61f1927190efebd": {}}  # Dict { operatorId : substreamId : [[Arrival, Completed]...]}
 
 numberOfOEsMap = {}
 
@@ -298,9 +298,34 @@ def operator_ground_truth(jobid):
     minOEs = min(numberOfOEsMap[jobid])
 
     stats_logs_path = outputDir + 'stats.txt'
+
+    # parse the job name and extract useful information:
+    params = figureName.split("-")
+    if jobid == "c21234bcbf1e8eb4c61f1927190efebd":
+        operatorName = "Splitter"
+    else:
+        operatorName = "Counter"
+
+    baseIdx = params[1].index("B")
+    cycleIdx = params[1].index("C")
+    rateIdx = params[1].index("R")
+    avgRate = 16667
+    cycle = params[1][cycleIdx+1:rateIdx]
+    rate = params[1][rateIdx+1:]
+    if rate == "833":
+        Amplitude = "4166(25%)"
+    elif rate == "1666":
+        Amplitude = "8333(50%)"
+
+    L1idx = params[4].index("L1")
+    L2idx = params[4].index("L2")
+
+    L1 = params[4][L1idx+2:L2idx]
+    L2 = params[4][L2idx+2:]
+
     with open(stats_logs_path, 'a') as f:
-        f.write("%s\t%s\t%d\t%d\t%d\t%s\t%d-%d\t%.15f\n" %
-                (figureName, jobid, retValue[1], retValue[2], retValue[3], retValue[0], minOEs, maxOEs, successRate))
+        f.write("%s\t%d\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d-%d\t%.15f\n" %
+                (operatorName, avgRate, Amplitude, L1, L2, cycle, retValue[1], retValue[2], retValue[3], retValue[0], minOEs, maxOEs, successRate))
 
 
 def app_ground_truth():
