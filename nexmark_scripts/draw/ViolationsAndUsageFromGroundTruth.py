@@ -40,7 +40,7 @@ substreamAvgLatency = {"c21234bcbf1e8eb4c61f1927190efebd": {}, "b71731f1c0df9c30
 numberOfOEsMap = {}
 
 # inputDir = '/home/samza/workspace/flink-extended/build-target/log/'
-inputDir = '/home/samza/workspace/flink-related/flink-testbed-nexmark/nexmark_scripts/draw/logs/' + figureName + '/'
+inputDir = '/home/samza/workspace/flink-testbed/nexmark_scripts/draw/logs/' + figureName + '/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 
