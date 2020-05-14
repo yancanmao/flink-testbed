@@ -154,7 +154,7 @@ for fileName in listdir(inputDir):
                         taskEndIdx = line.index("time:")
                         taskId = line[taskStartIdx + 11:taskEndIdx - 1]
                         operator = taskId.split("-")[0].split(" ")[0]
-                        if "start" not in lifeTimeMap[operator][taskId]:
+                        if taskId not in lifeTimeMap[operator]:
                             continue
                         if int(split[-1]) > actualEndTime:
                             lifeTimeMap[operator][taskId]["end"] = actualEndTime
