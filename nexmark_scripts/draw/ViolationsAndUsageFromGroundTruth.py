@@ -12,12 +12,12 @@ SMALL_SIZE = 25
 MEDIUM_SIZE = 30
 BIGGER_SIZE = 35
 
-plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)  # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 figureName = sys.argv[1]
@@ -32,7 +32,6 @@ calculateInterval = [0, runtime]  # The interval we calculate violation percenta
 # totalLength = 7100
 substreamAvgLatency = {}  # Dict { substreamId : [[Arrival, Completed]...]}
 
-
 # inputDir = '/home/samza/workspace/flink-related/flink-extended-nexmark/build-target/log/'
 inputDir = '/home/samza/workspace/flink-related/flink-testbed-nexmark/nexmark_scripts/draw/logs/' + figureName + '/'
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
@@ -44,6 +43,10 @@ keyLatencyIntervalFlag = False
 calibrateFlag = False
 
 startTime = sys.maxint
+
+actualStartTime = sys.maxint
+actualEndTime = sys.maxint
+
 totalTime = 0
 totalViolation = 0
 violationInWarmUp = []
@@ -53,12 +56,20 @@ totalInPeak = []
 for peakI in range(0, len(warmUpIntervals)):
     violationInWarmUp += [0]
     totalInPeak += [0]
-    warmUpIntervals[peakI] = [warmUpIntervals[peakI][0] * base / userWindow, warmUpIntervals[peakI][1] * base / userWindow]
+    warmUpIntervals[peakI] = [warmUpIntervals[peakI][0] * base / userWindow,
+                              warmUpIntervals[peakI][1] * base / userWindow]
 xaxes = [calculateInterval[0] * 1000 / userWindow, calculateInterval[-1] * 1000 / userWindow]
 
 maxMigrationTime = 0
 maxMigrationExecutor = ""
 migrationTimes = []
+
+migrationStartMap = {}
+lifeTimeMap = {}
+
+migrationTimeList = {}
+numOfMigration = {}
+
 for fileName in listdir(inputDir):
     if fileName == "flink-samza-taskexecutor-0-giraffe-sane.out":
         inputFile = inputDir + fileName
@@ -95,6 +106,62 @@ for fileName in listdir(inputDir):
                     startPoint += [int(split[3])]
                 if split[0] == 'Shutdown':
                     endPoint += [int(split[2])]
+
+                if len(split) > 4:
+                    # TODO: parse migration time, record which operator it belongs to
+                    if split[-2] == "checkpoint:":
+                        # get jobid, and record it into a map
+                        # when reconnection completed, deduct the checkpoint time, then we can get the migration time
+                        # directly sum those migration time
+                        # need to identify which operator it belongs to. and save a map
+                        taskEndIdx = line.index("received")
+                        taskId = line[:taskEndIdx - 1]
+                        migrationStartMap[taskId] = int(split[-1])
+                        # pass
+                    if split[-2] == "reconnection:":
+                        taskEndIdx = line.index("completed")
+                        taskId = line[:taskEndIdx - 1]
+                        if split[0] not in migrationTimeList:
+                            migrationTimeList[split[0]] = []
+                        if actualStartTime + 60000 < migrationStartMap[taskId] < actualEndTime:
+                            migrationTimeList[split[0]].append(int(split[-1]) - migrationStartMap[taskId])
+                        # pass
+                    # parse life time
+                    if split[0] == "start":
+                        if actualStartTime > int(split[-1]):
+                            actualStartTime = int(split[-1])
+                            actualEndTime = int(split[-1]) + 660000
+                        # save it into a map [id -> [start, end]]
+                        taskStartIdx = line.index("execution:")
+                        taskEndIdx = line.index("time:")
+                        taskId = line[taskStartIdx + 11:taskEndIdx - 1]
+                        operator = taskId.split("-")[0].split(" ")[0]
+                        if operator not in lifeTimeMap:
+                            lifeTimeMap[operator] = {}
+                        # 60 < cur < 660
+                        if int(split[-1]) < actualStartTime + 60000:
+                            lifeTimeMap[operator][taskId] = {}
+                            lifeTimeMap[operator][taskId]["start"] = actualStartTime + 60000
+                        elif int(split[-1]) > actualEndTime:
+                            continue
+                        else:
+                            lifeTimeMap[operator][taskId] = {}
+                            lifeTimeMap[operator][taskId]["start"] = int(split[-1])
+                        # pass
+                    if split[0] == "end":
+                        # note if dont have end, use the final 660s' ts as end time
+                        taskStartIdx = line.index("execution:")
+                        taskEndIdx = line.index("time:")
+                        taskId = line[taskStartIdx + 11:taskEndIdx - 1]
+                        operator = taskId.split("-")[0].split(" ")[0]
+                        if "start" not in lifeTimeMap[operator][taskId]:
+                            continue
+                        if int(split[-1]) > actualEndTime:
+                            lifeTimeMap[operator][taskId]["end"] = actualEndTime
+                        else:
+                            lifeTimeMap[operator][taskId]["end"] = int(split[-1])
+                        # pass
+
         migrationTime = []
         for i in range(0, len(endPoint)):
             if i + 1 < len(startPoint):
@@ -216,7 +283,7 @@ outputFile = outputDir + 'violation.png'
 legend = ['Total substream violation']
 figList = []
 for substreamList in totalViolationSubstream:
-    print(substreamList)
+    # print(substreamList)
     figList.append(len(totalViolationSubstream[substreamList]))
 fig = plt.figure(figsize=(16, 9))
 plt.plot(figList)
@@ -259,7 +326,6 @@ if (True):
 avgViolationPercentage = totalViolation / float(totalTime)
 sumDeviation = 0.0
 
-
 print('avg success rate=', 1 - avgViolationPercentage)
 print('total violation number=' + str(totalViolation))
 
@@ -283,35 +349,56 @@ print('Execept warm up avg success rate=', successRate)
 # print >> f, ('Execept warm up avg success rate=', 1 - violationNotPeak / float(timeNotPeak))
 
 from RateAndWindowDelay import draw as ratedraw
-retValue = ratedraw(100, figureName, warmup, runtime) # [AvgOEs, NumLB, NumSI, NumSO]
 
-# # parse figurename and get configurations
-# def parseName(figureName):
-#
+retValue = ratedraw(100, figureName, warmup, runtime)  # [AvgOEs, NumLB, NumSI, NumSO]
+
+numOfMigration["window"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
 
 stats_logs_path = outputDir + 'stats.txt'
 with open(stats_logs_path, 'a') as f:
     f.write("%s\t%d\t%d\t%d\t%s\t%.15f\n" %
             (figureName, retValue[1], retValue[2], retValue[3], retValue[0], successRate))
 
-# Calculate avg latency
-if (False):
-    print("Calculate avg lantecy")
-    sumLatency = 0
-    totalTuples = 0
-    for i in range(0, len(substreamLatency)):
-        # print(substreamLatency[i])
-        sumLatency += sum(substreamLatency[i])
-        totalTuples += len(substreamLatency[i])
+print("calculate migration time")
 
-    avgLatency = sumLatency / float(totalTuples)
-    print('avg latency=', avgLatency)
 
-    # Calculate standard error
-    sumDeviation = 0.0
-    print("Calculate standard deviation")
-    for i in range(0, len(substreamLatency)):
-        for j in range(0, len(substreamLatency[i])):
-            sumDeviation += (((substreamLatency[i][j] - avgLatency) ** 2) / (totalTuples - 1)) ** (0.5)
-    print('Standard deviation=', sumDeviation)
-    print('Standard error=', sumDeviation / (totalTuples) ** (0.5))
+def migration_time():
+    # read migration time from taskexecutor.out
+    # read life time from taskexecutor.out
+    sumMigrationTime = {}
+    minMaxMigrationTime = {}
+    avgMigrationTime = {}
+    totalLifeTime = {}
+    migrationTimeRatio = {}
+    for operatorId in migrationTimeList:
+        if operatorId in numOfMigration:
+            sumMigrationTime[operatorId] = sum(migrationTimeList[operatorId])
+            minMTime = min(migrationTimeList[operatorId])
+            maxMTime = max(migrationTimeList[operatorId])
+            minMaxMigrationTime[operatorId] = [minMTime, maxMTime]
+            avgMigrationTime[operatorId] = sumMigrationTime[operatorId] / numOfMigration[operatorId]
+            curLifeTimeMap = lifeTimeMap[operatorId]
+            curTotalLifeTime = 0
+            for taskId in curLifeTimeMap:
+                print(curLifeTimeMap[taskId])
+                curStart = curLifeTimeMap[taskId]["start"]
+                if "end" not in curLifeTimeMap[taskId]:
+                    curEnd = actualEndTime
+                else:
+                    curEnd = curLifeTimeMap[taskId]["end"]
+                curTotalLifeTime += curEnd - curStart
+            totalLifeTime[operatorId] = curTotalLifeTime
+            migrationTimeRatio[operatorId] = sumMigrationTime[operatorId] / float(curTotalLifeTime)
+            print(operatorId, "sumMigrationTime: ", str(sumMigrationTime[operatorId]), " min: " + str(minMTime),
+                  " max: " + str(maxMTime),
+                  " avg: ", str(avgMigrationTime[operatorId]), " lifeTime: " + str(curTotalLifeTime),
+                  " ratio: " + str(migrationTimeRatio[operatorId]))
+            stats_logs_path = outputDir + 'stats.txt'
+            with open(stats_logs_path, 'a') as f:
+                f.write(
+                    "%s, TotalLifeTime: %d , sumMigrationTime: %d, min-max MigrationTime: %d-%d, avgMigrationTime: %d, ratio: %.15f\n" %
+                    (operatorId, curTotalLifeTime, sumMigrationTime[operatorId], minMTime, maxMTime,
+                     avgMigrationTime[operatorId], migrationTimeRatio[operatorId]))
+
+
+migration_time()
