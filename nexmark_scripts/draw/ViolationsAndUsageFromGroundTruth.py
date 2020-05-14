@@ -51,9 +51,19 @@ calibrateFlag = False
 
 startTime = sys.maxint
 
+actualStartTime = sys.maxint
+actualEndTime = sys.maxint
+
 maxMigrationTime = 0
 maxMigrationExecutor = ""
 migrationTimes = []
+
+migrationStartMap = {}
+lifeTimeMap = {}
+
+migrationTimeList = {}
+numOfMigration = {}
+
 for fileName in listdir(inputDir):
     if fileName == "flink-samza-taskexecutor-0-camel-sane.out":
         inputFile = inputDir + fileName
@@ -94,6 +104,61 @@ for fileName in listdir(inputDir):
                         startPoint += [int(split[3])]
                     if split[0] == 'Shutdown':
                         endPoint += [int(split[2])]
+
+                if len(split) > 4:
+                    # TODO: parse migration time, record which operator it belongs to
+                    if split[-2] == "checkpoint:":
+                        # get jobid, and record it into a map
+                        # when reconnection completed, deduct the checkpoint time, then we can get the migration time
+                        # directly sum those migration time
+                        # need to identify which operator it belongs to. and save a map
+                        taskEndIdx = line.index("received")
+                        taskId = line[:taskEndIdx-1]
+                        migrationStartMap[taskId] = int(split[-1])
+                        # pass
+                    if split[-2] == "reconnection:":
+                        taskEndIdx = line.index("completed")
+                        taskId = line[:taskEndIdx-1]
+                        if split[0] not in migrationTimeList:
+                            migrationTimeList[split[0]] = []
+                        if actualStartTime + 60000 < migrationStartMap[taskId] < actualEndTime:
+                            migrationTimeList[split[0]].append(int(split[-1]) - migrationStartMap[taskId])
+                        # pass
+                    # parse life time
+                    if split[0] == "start":
+                        if actualStartTime > int(split[-1]):
+                            actualStartTime = int(split[-1])
+                            actualEndTime = int(split[-1]) + 660000
+                        # save it into a map [id -> [start, end]]
+                        taskStartIdx = line.index("execution:")
+                        taskEndIdx = line.index("time:")
+                        taskId = line[taskStartIdx+11:taskEndIdx-1]
+                        operator = taskId.split("-")[0].split(" ")[0]
+                        if operator not in lifeTimeMap:
+                            lifeTimeMap[operator] = {}
+                        # 60 < cur < 660
+                        if int(split[-1]) < actualStartTime + 60000:
+                            lifeTimeMap[operator][taskId] = {}
+                            lifeTimeMap[operator][taskId]["start"] = actualStartTime+60000
+                        elif int(split[-1]) > actualEndTime:
+                            continue
+                        else:
+                            lifeTimeMap[operator][taskId] = {}
+                            lifeTimeMap[operator][taskId]["start"] = int(split[-1])
+                        # pass
+                    if split[0] == "end":
+                        # note if dont have end, use the final 660s' ts as end time
+                        taskStartIdx = line.index("execution:")
+                        taskEndIdx = line.index("time:")
+                        taskId = line[taskStartIdx+11:taskEndIdx-1]
+                        operator = taskId.split("-")[0].split(" ")[0]
+                        if "start" not in lifeTimeMap[operator][taskId]:
+                            continue
+                        if int(split[-1]) > actualEndTime:
+                            lifeTimeMap[operator][taskId]["end"] = actualEndTime
+                        else:
+                            lifeTimeMap[operator][taskId]["end"] = int(split[-1])
+                        # pass
         migrationTime = []
         for i in range(0, len(endPoint)):
             if i + 1 < len(startPoint):
@@ -109,7 +174,13 @@ for fileName in listdir(inputDir):
 
 print(maxMigrationTime, maxMigrationExecutor)
 
+# add end time for those who have start time in life time map
+
+print(migrationTimeList)
+print(lifeTimeMap)
+
 def operator_ground_truth(jobid):
+    global Amplitude
     userLatency = userLatencyMap[jobid]
     totalTime = 0
     totalViolation = 0
@@ -286,6 +357,11 @@ def operator_ground_truth(jobid):
     # def parseName(figureName):
     #
 
+
+    if jobid == "c21234bcbf1e8eb4c61f1927190efebd":
+        numOfMigration["Splitter"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
+    else:
+        numOfMigration["Count"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
 
     if len(retValue[4]) >= runtime:
         numberOfOEsMap[jobid] = retValue[4][warmup:runtime]
@@ -500,12 +576,42 @@ def app_ground_truth():
 
 def migration_time():
     # read migration time from taskexecutor.out
-    # read life time from taskexecutor.log
-
-    pass
+    # read life time from taskexecutor.out
+    sumMigrationTime = {}
+    minMaxMigrationTime = {}
+    avgMigrationTime = {}
+    totalLifeTime = {}
+    migrationTimeRatio = {}
+    for operatorId in migrationTimeList:
+        if operatorId in numOfMigration:
+            sumMigrationTime[operatorId] =  sum(migrationTimeList[operatorId])
+            minMTime = min(migrationTimeList[operatorId])
+            maxMTime = max(migrationTimeList[operatorId])
+            minMaxMigrationTime[operatorId] = [minMTime, maxMTime]
+            avgMigrationTime[operatorId] = sumMigrationTime[operatorId] / numOfMigration[operatorId]
+            curLifeTimeMap = lifeTimeMap[operatorId]
+            curTotalLifeTime = 0
+            for taskId in curLifeTimeMap:
+                print(curLifeTimeMap[taskId])
+                curStart = curLifeTimeMap[taskId]["start"]
+                if "end" not in curLifeTimeMap[taskId]:
+                    curEnd = actualEndTime
+                else:
+                    curEnd = curLifeTimeMap[taskId]["end"]
+                curTotalLifeTime += curEnd - curStart
+            totalLifeTime[operatorId] = curTotalLifeTime
+            migrationTimeRatio[operatorId] = sumMigrationTime[operatorId] / float(curTotalLifeTime)
+            print(operatorId, "sumMigrationTime: ", str(sumMigrationTime[operatorId]), " min: " + str(minMTime), " max: " + str(maxMTime),
+                  " avg: ", str(avgMigrationTime[operatorId]), " lifeTime: " + str(curTotalLifeTime), " ratio: " + str(migrationTimeRatio[operatorId]))
+            stats_logs_path = outputDir + 'stats.txt'
+            with open(stats_logs_path, 'a') as f:
+                f.write("%s, TotalLifeTime: %d , sumMigrationTime: %d, min-max MigrationTime: %d-%d, avgMigrationTime: %d, ratio: %.15f\n" %
+                        (operatorId, curTotalLifeTime, sumMigrationTime[operatorId], minMTime, maxMTime, avgMigrationTime[operatorId], migrationTimeRatio[operatorId]))
 
 for jobid in substreamAvgLatency:
     operator_ground_truth(jobid)
 
 
 app_ground_truth()
+
+migration_time()
