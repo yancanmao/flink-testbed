@@ -37,7 +37,7 @@ inputDir = '/home/samza/workspace/flink-related/flink-testbed-nexmark/nexmark_sc
 # inputDir = '/home/myc/workspace/SSE-anaysis/src/nexmark_scripts/log/'
 outputDir = 'figures/' + figureName + '/'
 
-keyAverageLatencyFlag = True
+keyAverageLatencyFlag = False
 keyAverageLatencyThreshold = 0.2
 keyLatencyIntervalFlag = False
 calibrateFlag = False

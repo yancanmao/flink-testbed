@@ -85,7 +85,7 @@ SUMRUNTIME=730
 
 # set in Flink app
 RATE=0
-CYCLE=60
+CYCLE=120
 N=5
 AVGRATE=6000
 #RATE=100000
@@ -93,12 +93,12 @@ WARMUP=60
 TUPLESIZE=100
 Psource=5
 repeat=1
-Window=2
+Window=10
 
 #for RATE in 5000 10000; do # 50000 100000
-for RATE in 2000 4000 6000; do # 0 5000 10000 15000 20000 25000 30000
+for RATE in 2000 4000; do # 0 5000 10000 15000 20000 25000 30000
     for repeat in 1 2 3 4 5; do # 60 75 90 105 120
-        for Window in 10; do # only used for repeat exps, no other usage
+        for CYCLE in 90; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
             EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}S${TUPLESIZE}-${repeat}
@@ -123,30 +123,30 @@ for RATE in 2000 4000 6000; do # 0 5000 10000 15000 20000 25000 30000
     done
 done
 
-#for RATE in 5000 10000; do # 50000 100000
-for CYCLE in 60 90 120; do # 0 5000 10000 15000 20000 25000 30000
-    for repeat in 1 2 3 4 5; do # 60 75 90 105 120
-        for Window in 10; do # only used for repeat exps, no other usage
-            BASE=`expr ${AVGRATE} - ${RATE}`
-            RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}S${TUPLESIZE}-${repeat}
-            #EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
-            echo ${EXP_NAME}
+##for RATE in 5000 10000; do # 50000 100000
+#for CYCLE in 60 90 120; do # 0 5000 10000 15000 20000 25000 30000
+    #for repeat in 1 2 3 4 5; do # 60 75 90 105 120
+        #for Window in 10; do # only used for repeat exps, no other usage
+            #BASE=`expr ${AVGRATE} - ${RATE}`
+            #RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
+            #EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}S${TUPLESIZE}-${repeat}
+            ##EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
+            #echo ${EXP_NAME}
 
-            cleanEnv
-            configFlink
-            runFlink
-            runApp
+            ##cleanEnv
+            ##configFlink
+            ##runFlink
+            ##runApp
 
-            python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
+            ##python -c 'import time; time.sleep('"${SUMRUNTIME}"')'
 
-            #draw figure
-            closeFlink
-            draw
+            ##draw figure
+            ##closeFlink
+            #draw
 
-            ~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
-            python -c 'import time; time.sleep(30)'
-            kill -9 $(jps | grep ConsoleConsumer | awk '{print $1}')
-        done
-    done
-done
+           ## ~/samza-hello-samza/deploy/kafka/bin/kafka-console-consumer.sh  --bootstrap-server localhost:9092 --topic flink_metrics --from-beginning > ./nexmark_scripts/draw/logs/${EXP_NAME}/metrics &
+            ##python -c 'import time; time.sleep(30)'
+            ##kill -9 $(jps | grep ConsoleConsumer | awk '{print $1}')
+        #done
+    #done
+#done
