@@ -28,14 +28,14 @@ runtime = int(sys.argv[3])
 userLatency1 = int(sys.argv[4])
 userLatency2 = int(sys.argv[5])
 
-userLatencyMap = {"b71731f1c0df9c3076c4a455334d0ad6": userLatency1, "c21234bcbf1e8eb4c61f1927190efebd": userLatency2}
+userLatencyMap = {"c21234bcbf1e8eb4c61f1927190efebd": userLatency1, "b71731f1c0df9c3076c4a455334d0ad6": userLatency2}
 
 userWindow = 1000
 base = 1000  # timeslot size
 warmUpIntervals = [[0, warmup]]
 calculateInterval = [0, runtime]  # The interval we calculate violation percentage from 1st tuple completed
 # totalLength = 7100
-substreamAvgLatency = {"b71731f1c0df9c3076c4a455334d0ad6": {}, "c21234bcbf1e8eb4c61f1927190efebd": {}}  # Dict { operatorId : substreamId : [[Arrival, Completed]...]}
+substreamAvgLatency = {"c21234bcbf1e8eb4c61f1927190efebd": {}, "b71731f1c0df9c3076c4a455334d0ad6": {}}  # Dict { operatorId : substreamId : [[Arrival, Completed]...]}
 
 numberOfOEsMap = {}
 
