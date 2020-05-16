@@ -26,7 +26,8 @@ function configFlink() {
     # set user requirement
     sed 's/^\(\s*streamswitch.requirement.latency\s*:\s*\).*/\1'"$L"'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp
     sed 's/^\(\s*streamswitch.system.l_low\s*:\s*\).*/\1'"$l_low"'/' tmp > tmp2
-    sed 's/^\(\s*streamswitch.system.l_high\s*:\s*\).*/\1'"$l_high"'/' tmp2 > ${FLINK_DIR}/conf/flink-conf.yaml
+    sed 's/^\(\s*streamswitch.system.l_high\s*:\s*\).*/\1'"$l_high"'/' tmp2 > tmp3
+    sed 's/^\(\s*migration.delay\s*:\s*\).*/\1'"$delay"'/' tmp2 > ${FLINK_DIR}/conf/flink-conf.yaml
     rm tmp tmp2
 
     # set static or streamswitch
@@ -78,6 +79,7 @@ L=1000
 l_low=100
 l_high=100
 isTreat=1
+delay=0
 
 # only used in script
 QUERY=5
@@ -85,7 +87,7 @@ SUMRUNTIME=730
 
 # set in Flink app
 RATE=0
-CYCLE=120
+CYCLE=90
 N=5
 AVGRATE=6000
 #RATE=100000
@@ -95,13 +97,14 @@ Psource=5
 repeat=1
 Window=10
 
+
 #for RATE in 5000 10000; do # 50000 100000
-for RATE in 2000 4000; do # 0 5000 10000 15000 20000 25000 30000
+for RATE in 2000; do # 0 5000 10000 15000 20000 25000 30000
     for repeat in 1 2 3 4 5; do # 60 75 90 105 120
-        for CYCLE in 90; do # only used for repeat exps, no other usage
+        for delay in 1000 2000 3000 4000; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}S${TUPLESIZE}-${repeat}
+            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-D${delay}-T${isTreat}-W${Window}-${repeat}
             #EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-Ns${Psource}-N${N}-L${L}llow${l_low}lhigh${l_high}-T${isTreat}-R${RUNTIME}-W${Window}-${repeat}
             echo ${EXP_NAME}
 
