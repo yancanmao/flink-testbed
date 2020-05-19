@@ -385,13 +385,9 @@ def migration_time():
     for operatorId in migrationTimeList:
         if operatorId in numOfMigration:
             if operatorId in migrationTimeList:
-                sumMigrationTime[operatorId] = sum(migrationTimeList[operatorId])
-                minMTime = min(migrationTimeList[operatorId])
-                maxMTime = max(migrationTimeList[operatorId])
-            else:
-                sumMigrationTime[operatorId] = 0
-                minMTime = 0
-                maxMTime = 0
+            sumMigrationTime[operatorId] = sum(migrationTimeList[operatorId])
+            minMTime = min(migrationTimeList[operatorId])
+            maxMTime = max(migrationTimeList[operatorId])
             minMaxMigrationTime[operatorId] = [minMTime, maxMTime]
             avgMigrationTime[operatorId] = sumMigrationTime[operatorId] / numOfMigration[operatorId]
             curLifeTimeMap = lifeTimeMap[operatorId]
