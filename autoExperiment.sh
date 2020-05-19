@@ -30,7 +30,7 @@ function configFlink() {
     sed 's/^\(\s*task.good.delay\s*:\s*\).*/\1'"$delayGood"'/' tmp3 > tmp4
     sed 's/^\(\s*task.bad.delay\s*:\s*\).*/\1'"$delayBad"'/' tmp3 > tmp4
     sed 's/^\(\s*task.good.ratio\s*:\s*\).*/\1'"$ratioGood"'/' tmp4 > tmp5
-    sed 's/^\(\s*task.bad.ratio\s*:\s*\).*/\1'"$ratioBad"'/' tmp5 > ${FLINK_DIR}/conf/flink-conf.yam
+    sed 's/^\(\s*task.bad.ratio\s*:\s*\).*/\1'"$ratioBad"'/' tmp5 > ${FLINK_DIR}/conf/flink-conf.yaml
     rm tmp tmp2 tmp3 tmp4 tmp5
 
     # set static or streamswitch
@@ -106,7 +106,7 @@ repeat=1
 
 #for RATE in 5000 10000; do # 50000 100000
 for AVGRATE in 6000; do # 0 5000 10000 15000 20000 25000 30000
-    for repeat in 1; do # 60 75 90 105 120
+    for repeat in 3; do # 60 75 90 105 120
         for delayGood in 240000; do # only used for repeat exps, no other usage
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`

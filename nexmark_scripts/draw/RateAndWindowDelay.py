@@ -694,7 +694,7 @@ def draw(deltaT, jobname, warmup, runtime):
     plt.legend(legend, loc='upper left')
     plt.grid(True)
     axes = plt.gca()
-    maxOEs = 10
+    maxOEs = 30
     axes.set_yticks(np.arange(0, maxOEs))
     axes.set_xlim([xaxes[0] , xaxes[1]])
     #axes.set_xticks(xticks)
