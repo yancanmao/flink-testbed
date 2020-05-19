@@ -721,7 +721,7 @@ def draw(deltaT, jobname, warmup, runtime):
     numScaleOut = 0
     numLoadBalance = 0
     for i in range(0, len(decision)):
-        if(decisionT[i] <= xaxes[1] and decisionT[i] >= xaxes[0]):
+        if(decisionT[i] <= xaxes[1] and decisionT[i] >= warmup):
             if(decision[i] == 0):
                 numLoadBalance += 1
             elif(decision[i] == 1):
