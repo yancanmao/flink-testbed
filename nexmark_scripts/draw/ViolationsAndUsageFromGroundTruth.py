@@ -70,6 +70,8 @@ lifeTimeMap = {}
 migrationTimeList = {}
 numOfMigration = {}
 
+heterLifeTimeMap = {}
+
 for fileName in listdir(inputDir):
     if fileName == "flink-samza-taskexecutor-0-giraffe-sane.out":
         inputFile = inputDir + fileName
@@ -131,6 +133,8 @@ for fileName in listdir(inputDir):
                         timeStartIdx = line.index("time:")
                         timeEndIdx = line.index("isGood")
                         curTs = int(line[timeStartIdx+6: timeEndIdx - 1])
+                        type = split[-1]
+
                         if actualStartTime > curTs:
                             actualStartTime = curTs
                             actualEndTime = curTs + 660000
@@ -145,11 +149,13 @@ for fileName in listdir(inputDir):
                         if curTs < actualStartTime + 60000:
                             lifeTimeMap[operator][taskId] = {}
                             lifeTimeMap[operator][taskId]["start"] = actualStartTime + 60000
+                            heterLifeTimeMap[taskId] = type
                         elif curTs > actualEndTime:
                             continue
                         else:
                             lifeTimeMap[operator][taskId] = {}
                             lifeTimeMap[operator][taskId]["start"] = curTs
+                            heterLifeTimeMap[taskId] = type
                         # pass
                     if split[0] == "end":
                         curTs = int(split[-1])
@@ -356,7 +362,7 @@ from RateAndWindowDelay import draw as ratedraw
 
 retValue = ratedraw(100, figureName, warmup, runtime)  # [AvgOEs, NumLB, NumSI, NumSO]
 
-numOfMigration["window"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
+numOfMigration["flatmap"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
 
 stats_logs_path = outputDir + 'stats.txt'
 with open(stats_logs_path, 'a') as f:
@@ -374,6 +380,8 @@ def migration_time():
     avgMigrationTime = {}
     totalLifeTime = {}
     migrationTimeRatio = {}
+    goodTime = 0
+    badTime = 0
     for operatorId in migrationTimeList:
         if operatorId in numOfMigration:
             sumMigrationTime[operatorId] = sum(migrationTimeList[operatorId])
@@ -390,6 +398,10 @@ def migration_time():
                     curEnd = actualEndTime
                 else:
                     curEnd = curLifeTimeMap[taskId]["end"]
+                if heterLifeTimeMap[taskId] == "true":
+                    goodTime += curEnd - curStart
+                else:
+                    badTime += curEnd - curStart
                 curTotalLifeTime += curEnd - curStart
             totalLifeTime[operatorId] = curTotalLifeTime
             migrationTimeRatio[operatorId] = sumMigrationTime[operatorId] / float(curTotalLifeTime)
