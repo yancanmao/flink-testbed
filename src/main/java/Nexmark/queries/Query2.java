@@ -22,6 +22,7 @@ import Nexmark.sinks.DummyLatencyCountingSink;
 import Nexmark.sources.BidSourceFunction;
 import org.apache.beam.sdk.nexmark.model.Bid;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -56,7 +57,13 @@ public class Query2 {
 
         DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase, srcWarmUp*1000, srcTupleSize))
                 .setParallelism(params.getInt("p-source", 1))
-                .setMaxParallelism(params.getInt("mp2", 64));
+                .setMaxParallelism(params.getInt("mp2", 64))
+                .keyBy(new KeySelector<Bid, Long>() {
+                    @Override
+                    public Long getKey(Bid bid) throws Exception {
+                        return bid.auction;
+                    }
+                });
 
 
         // SELECT Rstream(auction, price)
