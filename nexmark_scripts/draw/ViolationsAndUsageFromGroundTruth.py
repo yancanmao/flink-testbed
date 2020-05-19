@@ -392,6 +392,8 @@ def migration_time():
                 avgMigrationTime[operatorId] = sumMigrationTime[operatorId] / numOfMigration[operatorId]
             else:
                 sumMigrationTime[operatorId] = 0
+                minMTime = 0
+                maxMTime = 0
                 minMaxMigrationTime[operatorId] = [0, 0]
                 avgMigrationTime[operatorId] = 0
 
