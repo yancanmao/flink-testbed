@@ -384,7 +384,6 @@ def migration_time():
     badTime = 0
     for operatorId in migrationTimeList:
         if operatorId in numOfMigration:
-            if operatorId in migrationTimeList:
             sumMigrationTime[operatorId] = sum(migrationTimeList[operatorId])
             minMTime = min(migrationTimeList[operatorId])
             maxMTime = max(migrationTimeList[operatorId])
