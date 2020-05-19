@@ -18,13 +18,12 @@
 
 package Nexmark.sources.keyed;
 
-import Nexmark.sources.Util;
 import org.apache.beam.sdk.nexmark.NexmarkConfiguration;
 import org.apache.beam.sdk.nexmark.model.Bid;
 import org.apache.beam.sdk.nexmark.sources.generator.GeneratorConfig;
 import org.apache.beam.sdk.nexmark.sources.generator.model.BidGenerator;
-import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 
 import java.util.Random;
 
@@ -34,7 +33,7 @@ import java.util.Random;
 public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Long, Bid>> {
 
     private volatile boolean running = true;
-    private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
+    private GeneratorConfig config;
     private long eventsCountSoFar = 0;
     private int rate;
     private int cycle = 60;
@@ -57,6 +56,28 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
         this.cycle = cycle;
         this.base = base;
         this.warmUpInterval = warmUpInterval;
+        NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
+        nexconfig.hotBiddersRatio=1;
+        nexconfig.hotAuctionRatio=1;
+        nexconfig.hotSellersRatio=1;
+        nexconfig.numInFlightAuctions=1;
+        nexconfig.numEventGenerators=1;
+        config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
+    }
+
+    public KeyedBidSourceFunction(int srcRate, int cycle, int base, int warmUpInterval, int tupleSize) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
+        this.warmUpInterval = warmUpInterval;
+        NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
+        nexconfig.hotBiddersRatio=1;
+        nexconfig.hotAuctionRatio=1;
+        nexconfig.hotSellersRatio=1;
+        nexconfig.numInFlightAuctions=1;
+        nexconfig.numEventGenerators=1;
+        nexconfig.avgBidByteSize=tupleSize;
+        config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
     }
 
     public KeyedBidSourceFunction(int srcRate) {
@@ -71,7 +92,7 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
         int curRate = base + rate;
 
         // warm up
-        Thread.sleep(60000);
+        Thread.sleep(10000);
 //        warmup(ctx);
 
         long startTs = System.currentTimeMillis();
@@ -95,12 +116,13 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
                 }
 
                 // Sleep for the rest of timeslice if needed
-                Nexmark.sources.Util.pause(emitStartTime);
+                Util.pause(emitStartTime);
             } else { // after warm up
                 if (count == 20) {
                     // change input rate every 1 second.
-                    epoch++;
-                    curRate = base + Nexmark.sources.Util.changeRateSin(rate, cycle, epoch);
+//                    epoch++;
+                    epoch = (int)((emitStartTime - startTs - warmUpInterval)/1000);
+                    curRate = base + Util.changeRateSin(rate, cycle, epoch);
                     System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
                     count = 0;
                 }
@@ -115,13 +137,12 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
                             config.timestampAndInterEventDelayUsForEvent(
                                     config.nextEventNumber(eventsCountSoFar)).getKey();
 
-                    // to make it has stable rate among different task
-                    ctx.collect(new Tuple2<>(getLong(), BidGenerator.nextBid(nextId, rnd, eventTimestamp, config)));
+                    ctx.collect(new Tuple2<>(nextId, BidGenerator.nextBid(nextId, rnd, eventTimestamp, config)));
                     eventsCountSoFar++;
                 }
 
                 // Sleep for the rest of timeslice if needed
-                Nexmark.sources.Util.pause(emitStartTime);
+                Util.pause(emitStartTime);
                 count++;
             }
         }
@@ -134,9 +155,6 @@ public class KeyedBidSourceFunction extends RichParallelSourceFunction<Tuple2<Lo
 
     private long nextId() {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
-    }
-
-    private static long getLong() {
-        return (long) Math.random();
+//        return config.firstEventId + eventsCountSoFar;
     }
 }
