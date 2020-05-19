@@ -128,9 +128,12 @@ for fileName in listdir(inputDir):
                         # pass
                     # parse life time
                     if split[0] == "start":
-                        if actualStartTime > int(split[-1]):
-                            actualStartTime = int(split[-1])
-                            actualEndTime = int(split[-1]) + 660000
+                        timeStartIdx = line.index("time:")
+                        timeEndIdx = line.index("isGood")
+                        curTs = int(line[timeStartIdx+6: timeEndIdx - 1])
+                        if actualStartTime > curTs:
+                            actualStartTime = curTs
+                            actualEndTime = curTs + 660000
                         # save it into a map [id -> [start, end]]
                         taskStartIdx = line.index("execution:")
                         taskEndIdx = line.index("time:")
@@ -139,16 +142,17 @@ for fileName in listdir(inputDir):
                         if operator not in lifeTimeMap:
                             lifeTimeMap[operator] = {}
                         # 60 < cur < 660
-                        if int(split[-1]) < actualStartTime + 60000:
+                        if curTs < actualStartTime + 60000:
                             lifeTimeMap[operator][taskId] = {}
                             lifeTimeMap[operator][taskId]["start"] = actualStartTime + 60000
-                        elif int(split[-1]) > actualEndTime:
+                        elif curTs > actualEndTime:
                             continue
                         else:
                             lifeTimeMap[operator][taskId] = {}
-                            lifeTimeMap[operator][taskId]["start"] = int(split[-1])
+                            lifeTimeMap[operator][taskId]["start"] = curTs
                         # pass
                     if split[0] == "end":
+                        curTs = int(split[-1])
                         # note if dont have end, use the final 660s' ts as end time
                         taskStartIdx = line.index("execution:")
                         taskEndIdx = line.index("time:")
@@ -156,10 +160,10 @@ for fileName in listdir(inputDir):
                         operator = taskId.split("-")[0].split(" ")[0]
                         if taskId not in lifeTimeMap[operator]:
                             continue
-                        if int(split[-1]) > actualEndTime:
+                        if curTs > actualEndTime:
                             lifeTimeMap[operator][taskId]["end"] = actualEndTime
                         else:
-                            lifeTimeMap[operator][taskId]["end"] = int(split[-1])
+                            lifeTimeMap[operator][taskId]["end"] = curTs
                         # pass
 
         migrationTime = []
