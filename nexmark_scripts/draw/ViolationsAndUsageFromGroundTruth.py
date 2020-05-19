@@ -384,11 +384,17 @@ def migration_time():
     badTime = 0
     for operatorId in migrationTimeList:
         if operatorId in numOfMigration:
-            sumMigrationTime[operatorId] = sum(migrationTimeList[operatorId])
-            minMTime = min(migrationTimeList[operatorId])
-            maxMTime = max(migrationTimeList[operatorId])
-            minMaxMigrationTime[operatorId] = [minMTime, maxMTime]
-            avgMigrationTime[operatorId] = sumMigrationTime[operatorId] / numOfMigration[operatorId]
+            if numOfMigration[operatorId] != 0:
+                sumMigrationTime[operatorId] = sum(migrationTimeList[operatorId])
+                minMTime = min(migrationTimeList[operatorId])
+                maxMTime = max(migrationTimeList[operatorId])
+                minMaxMigrationTime[operatorId] = [minMTime, maxMTime]
+                avgMigrationTime[operatorId] = sumMigrationTime[operatorId] / numOfMigration[operatorId]
+            else:
+                sumMigrationTime[operatorId] = 0
+                minMaxMigrationTime[operatorId] = [0, 0]
+                avgMigrationTime[operatorId] = 0
+
             curLifeTimeMap = lifeTimeMap[operatorId]
             curTotalLifeTime = 0
             for taskId in curLifeTimeMap:
@@ -412,8 +418,10 @@ def migration_time():
             stats_logs_path = outputDir + 'stats.txt'
             with open(stats_logs_path, 'a') as f:
                 f.write(
-                    "%s, TotalLifeTime: %d , sumMigrationTime: %d, min-max MigrationTime: %d-%d, avgMigrationTime: %d, ratio: %.15f\n" %
-                    (operatorId, curTotalLifeTime, sumMigrationTime[operatorId], minMTime, maxMTime,
+                    "%s, TotalLifeTime: %d, GoodTime: %d, BadTime: %d , sumMigrationTime: %d,"
+                    " min-max MigrationTime: %d-%d, avgMigrationTime: %d, ratio: %.15f\n" %
+                    (operatorId, curTotalLifeTime, goodTime, badTime,
+                     sumMigrationTime[operatorId], minMTime, maxMTime,
                      avgMigrationTime[operatorId], migrationTimeRatio[operatorId]))
 
 
