@@ -167,7 +167,8 @@ under the License.
 							</filters>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>Nexmark.queries.Query2</mainClass>
+									<!--<mainClass>flinkapp.StatefulDemo</mainClass>-->
+                                    <mainClass>Nexmark.queries.Query2Keyed</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
