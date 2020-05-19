@@ -49,8 +49,15 @@ public class Query2 {
         env.getConfig().setLatencyTrackingInterval(5000);
 
         final int srcRate = params.getInt("srcRate", 100000);
+        final int srcCycle = params.getInt("srcCycle", 60);
+        final int srcBase = params.getInt("srcBase", 0);
+        final int srcWarmUp = params.getInt("srcWarmUp", 100);
+        final int srcTupleSize = params.getInt("srcTupleSize", 100);
 
-        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate)).setParallelism(params.getInt("p-source", 1));
+        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase, srcWarmUp*1000, srcTupleSize))
+                .setParallelism(params.getInt("p-source", 1))
+                .setMaxParallelism(params.getInt("mp2", 64));
+
 
         // SELECT Rstream(auction, price)
         // FROM Bid [NOW]
@@ -64,7 +71,10 @@ public class Query2 {
                             out.collect(new Tuple2<>(bid.auction, bid.price));
                         }
                     }
-                }).setParallelism(params.getInt("p-flatMap", 1));
+                }).setMaxParallelism(params.getInt("mp2", 64))
+                .setParallelism(params.getInt("p2", 1))
+                .name("flatmap")
+                .uid("flatmap");
 
         GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
         converted.transform("DummyLatencySink", objectTypeInfo, new DummyLatencyCountingSink<>(logger))

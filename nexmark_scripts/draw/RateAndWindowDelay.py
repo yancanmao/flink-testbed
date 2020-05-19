@@ -793,7 +793,6 @@ def draw(deltaT, jobname, warmup, runtime):
         if timestamp > runtime*10:
             continue
         backlog = arrivedProcessed["Arrived:"] - arrivedProcessed["Completed:"]
-        print(arrivedProcessed)
         if backlog < 0:
             backlog = 0
         totalBacklog[timestamp] = backlog
