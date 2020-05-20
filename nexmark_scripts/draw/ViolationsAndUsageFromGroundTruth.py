@@ -168,6 +168,8 @@ for fileName in listdir(inputDir):
                             continue
                         if curTs > actualEndTime:
                             lifeTimeMap[operator][taskId]["end"] = actualEndTime
+                        elif curTs < actualStartTime:
+                            del lifeTimeMap[operator][taskId]
                         else:
                             lifeTimeMap[operator][taskId]["end"] = curTs
                         # pass
