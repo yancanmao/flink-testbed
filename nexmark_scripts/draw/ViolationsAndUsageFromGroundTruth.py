@@ -137,7 +137,7 @@ for fileName in listdir(inputDir):
 
                         if actualStartTime > curTs:
                             actualStartTime = curTs
-                            actualEndTime = curTs + 660000
+                            actualEndTime = curTs + runtime
                         # save it into a map [id -> [start, end]]
                         taskStartIdx = line.index("execution:")
                         taskEndIdx = line.index("time:")
@@ -146,9 +146,9 @@ for fileName in listdir(inputDir):
                         if operator not in lifeTimeMap:
                             lifeTimeMap[operator] = {}
                         # 60 < cur < 660
-                        if curTs < actualStartTime + 60000:
+                        if curTs < actualStartTime + warmup:
                             lifeTimeMap[operator][taskId] = {}
-                            lifeTimeMap[operator][taskId]["start"] = actualStartTime + 60000
+                            lifeTimeMap[operator][taskId]["start"] = actualStartTime + warmup
                             heterLifeTimeMap[taskId] = type
                         elif curTs > actualEndTime:
                             continue
