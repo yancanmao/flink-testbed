@@ -515,7 +515,7 @@ def draw(deltaT, jobname, warmup, runtime):
                 axes.set_xticks(xticks)
                 # axes.set_xticklabels(xlabels)
                 #axes.set_yscale('log')
-                axes.set_ylim([1, 10000])
+                # axes.set_ylim([1, 10000])
                 #axes.set_yticks([1, 10, 100, 1000, 10000, 100000])
                 import matplotlib.ticker as ticker
                 #axes.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
