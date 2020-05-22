@@ -104,11 +104,33 @@ Psource=5
 repeat=1
 
 
-#for RATE in 5000 10000; do # 50000 100000
-#for RATE in 0; do # 0 5000 10000 15000 20000 25000 30000
-    for RATE in 2000; do # 60 75 90 105 120
-        for repeat in 2 3 4 5 6 7 8 9 10; do # only used for repeat exps, no other usage
-            for ratioBad in 4 3; do # only used for repeat exps, no other usage
+for repeat in 1 2 3 4 5; do # only used for repeat exps, no other usage
+    for delayBad in 720000 480000 120000 80000; do # only used for repeat exps, no other usage
+        for ratioBad in 4 3 2 1; do # only used for repeat exps, no other usage
+            case "$delayBad" in
+                "720000")
+                    N=32
+                ;;
+                "480000")
+                    N=22
+                ;;
+                "120000")
+                    N=12
+                ;;
+                "80000")
+                    N=6
+                ;;
+            esac
+
+            # 60% 80% of 33% no need to run
+            if [[ $delayBad -eq 720000 ]]
+            then
+                if [[ $ratioBad -eq 4 || $ratioBad -eq 3 ]]
+                then
+                    continue  ### resumes iteration of an enclosing for loop ###
+                fi
+            fi
+
             ratioGood=`expr ${ratio} - ${ratioBad}`
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
