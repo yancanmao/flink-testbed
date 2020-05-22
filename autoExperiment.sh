@@ -10,7 +10,7 @@ function cleanEnv() {
     ~/samza-hello-samza/bin/grid stop kafka
     ~/samza-hello-samza/bin/grid stop zookeeper
     kill -9 $(jps | grep Kafka | awk '{print $1}')
-    rm -r /tmp/kafka-logs/
+    rm -r /data/kafka/kafka-logs/
     rm -r /tmp/zookeeper/
 
     python -c 'import time; time.sleep(20)'
@@ -24,14 +24,14 @@ function cleanEnv() {
 # configure parameters in flink bin
 function configFlink() {
     # set user requirement
-    sed 's/^\(\s*streamswitch.requirement.latency\s*:\s*\).*/\1'"$L"'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp
-    sed 's/^\(\s*streamswitch.system.l_low\s*:\s*\).*/\1'"$l_low"'/' tmp > tmp2
+    sed 's/^\(\s*streamswitch.requirement.latency\s*:\s*\).*/\1'"$L"'/' ${FLINK_DIR}/conf/flink-conf.yaml > tmp1
+    sed 's/^\(\s*streamswitch.system.l_low\s*:\s*\).*/\1'"$l_low"'/' tmp1 > tmp2
     sed 's/^\(\s*streamswitch.system.l_high\s*:\s*\).*/\1'"$l_high"'/' tmp2 > tmp3
     sed 's/^\(\s*task.good.delay\s*:\s*\).*/\1'"$delayGood"'/' tmp3 > tmp4
-    sed 's/^\(\s*task.bad.delay\s*:\s*\).*/\1'"$delayBad"'/' tmp3 > tmp4
-    sed 's/^\(\s*task.good.ratio\s*:\s*\).*/\1'"$ratioGood"'/' tmp4 > tmp5
-    sed 's/^\(\s*task.bad.ratio\s*:\s*\).*/\1'"$ratioBad"'/' tmp5 > ${FLINK_DIR}/conf/flink-conf.yaml
-    rm tmp tmp2 tmp3 tmp4 tmp5
+    sed 's/^\(\s*task.bad.delay\s*:\s*\).*/\1'"$delayBad"'/' tmp4 > tmp5
+    sed 's/^\(\s*task.good.ratio\s*:\s*\).*/\1'"$ratioGood"'/' tmp5 > tmp6
+    sed 's/^\(\s*task.bad.ratio\s*:\s*\).*/\1'"$ratioBad"'/' tmp6 > ${FLINK_DIR}/conf/flink-conf.yaml
+    rm tmp1 tmp2 tmp3 tmp4 tmp5 tmp6
 
     # set static or streamswitch
     if [[ ${isTreat} == 1 ]]
@@ -86,31 +86,33 @@ isTreat=1
 delayGood=240000
 delayBad=480000
 ratioGood=1
-ratioBad=0
-
+ratioBad=4
+ratio=5
 # only used in script
 QUERY=2
-SUMRUNTIME=730
+SUMRUNTIME=3970
 
 # set in Flink app
-RATE=0
-CYCLE=90
-N=12
+RATE=2000
+CYCLE=600
+N=32
 AVGRATE=6000
 #RATE=100000
-WARMUP=60
+WARMUP=300
 TUPLESIZE=100
 Psource=5
 repeat=1
 
 
 #for RATE in 5000 10000; do # 50000 100000
-for AVGRATE in 6000; do # 0 5000 10000 15000 20000 25000 30000
-    for repeat in 3; do # 60 75 90 105 120
-        for delayGood in 240000; do # only used for repeat exps, no other usage
+#for RATE in 0; do # 0 5000 10000 15000 20000 25000 30000
+    for RATE in 2000; do # 60 75 90 105 120
+        for repeat in 2 3 4 5 6 7 8 9 10; do # only used for repeat exps, no other usage
+            for ratioBad in 4 3; do # only used for repeat exps, no other usage
+            ratioGood=`expr ${ratio} - ${ratioBad}`
             BASE=`expr ${AVGRATE} - ${RATE}`
             RUNTIME=`expr ${SUMRUNTIME} - ${WARMUP} - 10`
-            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-D${delayGood}-T${isTreat}-${repeat}
+            EXP_NAME=Q${QUERY}-B${BASE}C${CYCLE}R${RATE}-N${N}-L${L}llow${l_low}lhigh${l_high}-D${delayBad}-${ratioGood}To${ratioBad}-T${isTreat}-${repeat}
             echo ${EXP_NAME}
 
             cleanEnv
