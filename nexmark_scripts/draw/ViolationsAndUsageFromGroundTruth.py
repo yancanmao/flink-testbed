@@ -368,7 +368,7 @@ numOfMigration["flatmap"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3
 
 stats_logs_path = outputDir + 'stats.txt'
 with open(stats_logs_path, 'a') as f:
-    f.write("%s\t%d\t%d\t%d\t%s\t%.15f\n" %
+    f.write("%s\t%d\t%d\t%d\t%s\t%.15f\t" %
             (figureName, retValue[1], retValue[2], retValue[3], retValue[0], successRate))
 
 print("calculate migration time")
@@ -421,10 +421,16 @@ def migration_time():
                   " ratio: " + str(migrationTimeRatio[operatorId]))
             stats_logs_path = outputDir + 'stats.txt'
             with open(stats_logs_path, 'a') as f:
+                # f.write(
+                #     "%s, TotalLifeTime: %d, GoodTime: %d, BadTime: %d , sumMigrationTime: %d,"
+                #     " min-max MigrationTime: %d-%d, avgMigrationTime: %d, ratio: %.15f\n" %
+                #     (operatorId, curTotalLifeTime, goodTime, badTime,
+                #      sumMigrationTime[operatorId], minMTime, maxMTime,
+                #      avgMigrationTime[operatorId], migrationTimeRatio[operatorId]))
                 f.write(
-                    "%s, TotalLifeTime: %d, GoodTime: %d, BadTime: %d , sumMigrationTime: %d,"
-                    " min-max MigrationTime: %d-%d, avgMigrationTime: %d, ratio: %.15f\n" %
-                    (operatorId, curTotalLifeTime, goodTime, badTime,
+                    "%d\t%d\t%d\t%d\t"
+                    "%d-%d\t%d\t%.15f\n" %
+                    (curTotalLifeTime, goodTime, badTime,
                      sumMigrationTime[operatorId], minMTime, maxMTime,
                      avgMigrationTime[operatorId], migrationTimeRatio[operatorId]))
 
