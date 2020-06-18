@@ -42,8 +42,7 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class Query3Stateful {
 
@@ -153,6 +152,7 @@ private static final class JoinPersonsWithAuctions extends RichCoFlatMapFunction
                 auctionMap.put(auction.seller, ids);
             }
         }
+        metricsDump();
     }
 
     @Override
@@ -168,6 +168,17 @@ private static final class JoinPersonsWithAuctions extends RichCoFlatMapFunction
                 out.collect(new Tuple4<>(person.name, person.city, person.state, auctionId));
             }
         }
+    }
+
+    public void metricsDump() throws Exception {
+        Iterator iter = personMap.iterator();
+        int sumTest = 0;
+        while (iter.hasNext()) {
+            Map.Entry<Long, Tuple3<String, String, String>> entry = (Map.Entry<Long, Tuple3<String, String, String>>) iter.next();
+            sumTest++;
+        }
+
+        System.out.println("test size: " + sumTest);
     }
 }
 

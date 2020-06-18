@@ -57,6 +57,7 @@ public class Query8 {
 
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setStateBackend(new MemoryStateBackend(100000000));
 //        new MemoryStateBackend(1024 * 1024 * 1024, false);
 //        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 //        env.setStateBackend(new FsStateBackend("hdfs://camel:9000/flink/checkpoints"));

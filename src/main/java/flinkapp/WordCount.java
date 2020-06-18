@@ -1,85 +1,120 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package flinkapp;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.apache.flink.util.Collector;
 
-import java.util.Properties;
-
-import static java.lang.Thread.sleep;
-
+/**
+ * This example shows an implementation of WordCount with data from a text
+ * socket. To run the example make sure that the service providing the text data
+ * is already up and running.
+ * <p/>
+ * <p/>
+ * To start an example socket text stream on your local machine run netcat from
+ * a command line: <code>nc -lk 9999</code>, where the parameter specifies the
+ * port number.
+ * <p/>
+ * <p/>
+ * <p/>
+ * Usage:
+ * <code>SocketTextStreamWordCount &lt;hostname&gt; &lt;port&gt; &lt;result path&gt;</code>
+ * <br>
+ * <p/>
+ * <p/>
+ * This example shows how to:
+ * <ul>
+ * <li>use StreamExecutionEnvironment.socketTextStream
+ * <li>write a simple Flink program,
+ * <li>write and use user-defined functions.
+ * </ul>
+ *
+ * @see <a href="www.openbsd.org/cgi-bin/man.cgi?query=nc">netcat</a>
+ */
 public class WordCount {
-
-    private static final String INPUT_STREAM_ID = "wc_input";
-    private static final String OUTPUT_STREAM_ID = "wc_output";
-    private static final String KAFKA_BROKERS = "localhost:9092";
-
     public static void main(String[] args) throws Exception {
 
+        if (!parseParameters(args)) {
+            return;
+        }
 
-        final SourceFunction<String> source;
+        // set up the execution environment
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment
+                .getExecutionEnvironment();
 
-        Properties kafkaProps = new Properties();
-        kafkaProps.setProperty("bootstrap.servers", KAFKA_BROKERS);
-
-        FlinkKafkaConsumer011<String> inputConsumer = new FlinkKafkaConsumer011<>(INPUT_STREAM_ID, new SimpleStringSchema(), kafkaProps);
-
-        inputConsumer.setStartFromLatest();
-        inputConsumer.setCommitOffsetsOnCheckpoints(false);
-
-        source = inputConsumer;
-
-        StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
-
-        see.enableCheckpointing(2000L);
-
-
-        DataStream<String> words = see.addSource(source);
+        // get input data
+        DataStream<String> text = env.socketTextStream(hostName, port, '\n', 0);
 
         DataStream<Tuple2<String, Integer>> counts =
                 // split up the lines in pairs (2-tuples) containing: (word,1)
-                words.flatMap(new Tokenizer())
+                text.flatMap(new Tokenizer())
+//                        .setParallelism(2)
                         // group by the tuple field "0" and sum up tuple field "1"
-                        .keyBy(0).sum(1);
+                        .keyBy(0)
+                        .sum(1);
 
-        // emit result
-        System.out.println("Printing result to stdout. Use --output to specify output path.");
         counts.print();
 
-        counts
-                .map(new MapFunction<Tuple2<String,Integer>, String>() {
-                    @Override
-                    public String map(Tuple2<String, Integer> tuple) {
-                        return tuple.toString();
-                    }
-                })
-                .addSink(new FlinkKafkaProducer011<>(KAFKA_BROKERS, OUTPUT_STREAM_ID, new SimpleStringSchema()));
-
         // execute program
-        see.execute("Streaming WordCount");
-        long processingStart = System.nanoTime();
-        System.out.println(processingStart);
-        sleep(1000);
-        System.out.println(System.nanoTime() - processingStart);
+        env.execute("WordCount from SocketTextStream Example");
+    }
+
+    // *************************************************************************
+    // UTIL METHODS
+    // *************************************************************************
+
+    private static boolean fileOutput = false;
+    private static String hostName;
+    private static int port;
+    private static String outputPath;
+
+    private static boolean parseParameters(String[] args) {
+
+        // parse input arguments
+        if (args.length == 3) {
+            fileOutput = true;
+            hostName = args[0];
+            port = Integer.valueOf(args[1]);
+            outputPath = args[2];
+        } else if (args.length == 2) {
+            hostName = args[0];
+            port = Integer.valueOf(args[1]);
+        } else {
+            System.err.println("Usage: SocketTextStreamWordCount <hostname> <port> [<output path>]");
+            return false;
+        }
+        return true;
     }
 
     /**
      * Implements the string tokenizer that splits sentences into words as a
-     * user-defined FlatMapFunction. The function takes a line (String) and
-     * splits it into multiple pairs in the form of "(word,1)" ({@code Tuple2<String,
+     * user-defined FlatMapFunction. The function takes a line (String) and splits
+     * it into multiple pairs in the form of "(word,1)" ({@code Tuple2<String,
      * Integer>}).
      */
     public static final class Tokenizer implements FlatMapFunction<String, Tuple2<String, Integer>> {
+        private static final long serialVersionUID = 1L;
 
         @Override
-        public void flatMap(String value, Collector<Tuple2<String, Integer>> out) {
+        public void flatMap(String value, Collector<Tuple2<String, Integer>> out) throws Exception {
             // normalize and split the line
             String[] tokens = value.toLowerCase().split("\\W+");
 
