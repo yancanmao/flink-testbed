@@ -1,5 +1,6 @@
 package flinkapp;
 
+import Nexmark.sinks.DummySink;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.ListState;
@@ -7,11 +8,13 @@ import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
@@ -26,15 +29,11 @@ public class StatefulDemoLongRun {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        env.enableCheckpointing(1000);
-        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
-
-        FlinkKafkaProducer011<String> kafkaProducer = new FlinkKafkaProducer011<String>(
-                "localhost:9092", "my-flink-demo-topic0", new SimpleStringSchema());
-        kafkaProducer.setWriteTimestampToKafka(true);
+//        env.enableCheckpointing(1000);
+//        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
         DataStreamSource<Tuple2<String, String>> source = env.addSource(new MySource());
-        source
+        DataStream<String> counts = source
             .keyBy(0)
             .map(new MyStatefulMap())
             .disableChaining()
@@ -43,8 +42,13 @@ public class StatefulDemoLongRun {
 //            })
             .name("Splitter FlatMap")
             .uid("flatmap")
-            .setParallelism(2)
-            .addSink(kafkaProducer);
+            .setParallelism(3);
+
+        GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
+        counts.transform("Sink", objectTypeInfo,
+                new DummySink<>())
+                .uid("dummy-sink")
+                .setParallelism(1);
 
         env.execute();
 //        System.out.println(env.getExecutionPlan());
