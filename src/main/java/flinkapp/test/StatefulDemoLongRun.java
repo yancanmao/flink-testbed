@@ -1,8 +1,7 @@
-package flinkapp;
+package flinkapp.test;
 
 import Nexmark.sinks.DummySink;
 import org.apache.flink.api.common.functions.RichMapFunction;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
@@ -13,16 +12,21 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
-import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 
 import java.util.HashMap;
 import java.util.Map;
+
+/**
+ * Test Job for the most fundemental functionalities,
+ * 1. single scaling, mutliple scaling.
+ * 2. different arrival rates, testing scaling on under-loaded job and over-loaded job.
+ * 3. different key distributions, whether the final key count is consistent.
+ */
 
 public class StatefulDemoLongRun {
 
