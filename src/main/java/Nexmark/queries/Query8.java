@@ -67,8 +67,8 @@ public class Query8 {
 
         env.getConfig().setAutoWatermarkInterval(1000);
 
-        env.enableCheckpointing(1000);
-        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+//        env.enableCheckpointing(1000);
+//        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
         // enable latency tracking
         //env.getConfig().setLatencyTrackingInterval(5000);
@@ -121,9 +121,10 @@ public class Query8 {
 
         joined = ((SingleOutputStreamOperator<Tuple3<Long, String, Long>>) joined).disableChaining();
 
-        ((SingleOutputStreamOperator<Tuple3<Long, String, Long>>) joined).setMaxParallelism(params.getInt("mp2", 64));
-        ((SingleOutputStreamOperator<Tuple3<Long, String, Long>>) joined).setParallelism(params.getInt("p2",  1));
-        ((SingleOutputStreamOperator<Tuple3<Long, String, Long>>) joined).name("join");
+        ((SingleOutputStreamOperator<Tuple3<Long, String, Long>>) joined)
+                .setMaxParallelism(params.getInt("mp2", 128))
+                .setParallelism(params.getInt("p2", 1))
+                .name("join");
 
         GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
         joined.transform("DummySink", objectTypeInfo, new DummySink<>())
