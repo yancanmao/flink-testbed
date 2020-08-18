@@ -77,7 +77,7 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
 
         int epoch = 0;
         int count = 0;
-        int curRate = rate;
+        int curRate = base + rate;
 
         // warm up
         Thread.sleep(10000);
