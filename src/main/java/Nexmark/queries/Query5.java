@@ -19,6 +19,8 @@
 package Nexmark.queries;
 
 import Nexmark.sinks.DummyLatencyCountingSink;
+import Nexmark.sinks.DummySink;
+
 import Nexmark.sources.BidSourceFunction;
 import org.apache.beam.sdk.nexmark.model.Bid;
 import org.apache.flink.api.common.functions.AggregateFunction;
@@ -93,7 +95,7 @@ public class Query5 {
         ((SingleOutputStreamOperator<Tuple2<Long, Long>>) windowed).name("window");
 
         GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
-        windowed.transform("DummyLatencySink", objectTypeInfo, new DummyLatencyCountingSink<>(logger))
+        windowed.transform("DummyLatencySink", objectTypeInfo, new DummySink<>())
                 .setParallelism(params.getInt("p-window", 1));
 
         // execute program

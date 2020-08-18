@@ -57,6 +57,8 @@ public class Query8 {
 
         // set up the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        env.setStateBackend(new MemoryStateBackend(100000000));
 //        new MemoryStateBackend(1024 * 1024 * 1024, false);
 //        env.setStateBackend(new FsStateBackend("file:///home/myc/workspace/flink-related/states"));
 //        env.setStateBackend(new FsStateBackend("hdfs://camel:9000/flink/checkpoints"));
@@ -66,8 +68,8 @@ public class Query8 {
 
         env.getConfig().setAutoWatermarkInterval(1000);
 
-        env.enableCheckpointing(1000);
-        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+        // env.enableCheckpointing(1000);
+        // env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
         // enable latency tracking
         //env.getConfig().setLatencyTrackingInterval(5000);
@@ -80,16 +82,23 @@ public class Query8 {
         final int personSrcCycle = params.getInt("person-srcCycle", 60);
         final int personSrcBase = params.getInt("person-srcBase", 0);
 
+        // not used yet
+        final int srcTupleSize = params.getInt("srcTupleSize", 100);
+        final int srcWarmUp = params.getInt("srcWarmUp", 100);
+
+
         env.setParallelism(params.getInt("p-window", 1));
 
-        DataStream<Auction> auctions = env.addSource(new AuctionSourceFunction(auctionSrcRate, auctionSrcCycle, auctionSrcBase))
+        DataStream<Auction> auctions = env.addSource(new AuctionSourceFunction(auctionSrcRate, auctionSrcCycle, auctionSrcBase, srcWarmUp*1000))
                 .name("Custom Source: Auctions")
-                .setParallelism(params.getInt("p-auction-source", 1));
+//                .setParallelism(params.getInt("p-auction-source", 1));
+                .setParallelism(params.getInt("p-source", 1));
 //                .assignTimestampsAndWatermarks(new AuctionTimestampAssigner());
 
-        DataStream<Person> persons = env.addSource(new PersonSourceFunction(personSrcRate, personSrcCycle, personSrcBase))
+        DataStream<Person> persons = env.addSource(new PersonSourceFunction(personSrcRate, personSrcCycle, personSrcBase, srcWarmUp*1000))
                 .name("Custom Source: Persons")
-                .setParallelism(params.getInt("p-person-source", 1));
+//                .setParallelism(params.getInt("p-person-source", 1));
+                .setParallelism(params.getInt("p-source", 1));
 //                .assignTimestampsAndWatermarks(new PersonTimestampAssigner());
 
 
@@ -110,7 +119,7 @@ public class Query8 {
                         return a.seller;
                     }
                 })
-                        .window(TumblingEventTimeWindows.of(Time.milliseconds(1)))
+                        .window(TumblingEventTimeWindows.of(Time.milliseconds(params.getInt("window-size", 1))))
                         .apply(new FlatJoinFunction<Person, Auction, Tuple3<Long, String, Long>>() {
                             @Override
                             public void join(Person p, Auction a, Collector<Tuple3<Long, String, Long>> out) {

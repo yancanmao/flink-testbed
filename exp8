@@ -1,1 +1,1 @@
-./submit-nexmark.sh 5 64 500 400 250 1
+./submit-nexmark.sh 1 64 200000 60 0 1

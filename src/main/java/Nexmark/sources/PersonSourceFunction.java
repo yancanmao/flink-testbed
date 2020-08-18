@@ -34,7 +34,7 @@ import java.util.Random;
 public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
 
     private volatile boolean running = true;
-    private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
+    private GeneratorConfig config;
     private long eventsCountSoFar = 0;
     private int rate;
     private int cycle = 60;
@@ -57,6 +57,14 @@ public class PersonSourceFunction extends RichParallelSourceFunction<Person> {
         this.cycle = cycle;
         this.base = base;
         this.warmUpInterval = warmUpInterval;
+
+        NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
+        nexconfig.hotBiddersRatio=1;
+        nexconfig.hotAuctionRatio=1;
+        nexconfig.hotSellersRatio=1;
+        nexconfig.numInFlightAuctions=1;
+        nexconfig.numEventGenerators=1;
+        config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
     }
 
     public PersonSourceFunction(int srcRate) {
