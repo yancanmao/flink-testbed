@@ -25,3 +25,4 @@ figures/
 *.png
 *.out
 logs/
+venv/
