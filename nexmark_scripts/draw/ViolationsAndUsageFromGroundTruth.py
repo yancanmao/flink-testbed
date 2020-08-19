@@ -352,7 +352,9 @@ from RateAndWindowDelay import draw as ratedraw
 
 retValue = ratedraw(100, figureName, warmup, runtime)  # [AvgOEs, NumLB, NumSI, NumSO]
 
-numOfMigration["window"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
+# this should be modified in terms of different qeuries
+# numOfMigration["window"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
+numOfMigration["join"] = int(retValue[1]) + int(retValue[2]) + int(retValue[3])
 
 stats_logs_path = outputDir + 'stats.txt'
 with open(stats_logs_path, 'a') as f:
