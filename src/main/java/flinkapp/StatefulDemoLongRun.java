@@ -36,8 +36,8 @@ public class StatefulDemoLongRun {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-//        env.enableCheckpointing(1000);
-//        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+        env.enableCheckpointing(1000);
+        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
         DataStreamSource<Tuple2<String, String>> source = env.addSource(new MySource(
                 params.getInt("runtime", 10),
