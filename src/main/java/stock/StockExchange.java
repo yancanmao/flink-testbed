@@ -172,7 +172,7 @@ public class StockExchange {
 ////                try {
 ////                    Files.write(latencyFile, latency, Charset.forName("UTF-8"));
 ////                } catch (IOException e) {
-////                    System.err.println("Error while writing latency file for epoch " + epoch + ".");
+////                    System.err.txt.println("Error while writing latency file for epoch " + epoch + ".");
 ////                    e.printStackTrace();
 ////                }
 //            }

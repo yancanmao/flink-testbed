@@ -2,7 +2,6 @@ package flinkapp;
 
 import Nexmark.sinks.DummySink;
 import org.apache.flink.api.common.functions.RichMapFunction;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
@@ -19,10 +18,12 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 
+import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 public class StatefulDemoLongRun {
 
@@ -71,6 +72,27 @@ public class StatefulDemoLongRun {
 
         private int count = 0;
 
+        private static Boolean isErrorHappened() throws IOException {
+            Scanner scanner = new Scanner(new File("/home/myc/workspace/flink-related/flink-testbed/src/main/resources/err.txt"));
+            String line = scanner.nextLine();
+            if(line.equals("1")) {
+                return true;
+            } else {
+                // modify and return false
+                System.out.println(line);
+                try {
+                    FileWriter fileWriter = new FileWriter(new File(
+                            "/home/myc/workspace/flink-related/flink-testbed/src/main/resources/err.txt"), false);
+                    fileWriter.write("1");
+                    fileWriter.close();
+                } catch (IOException e) {
+                    System.out.println("An error occurred.");
+                    e.printStackTrace();
+                }
+                return false;
+            }
+        }
+
         @Override
         public String map(Tuple2<String, String> input) throws Exception {
             long start = System.nanoTime();
@@ -83,7 +105,13 @@ public class StatefulDemoLongRun {
             countMap.put(s, cur);
 
             count++;
-            System.out.println("counted: " + s + " : " + cur);
+
+//            // throw an exception to make task fails
+            if (count == 2000 && !isErrorHappened()) {
+                int err = count / 0;
+            }
+
+//            System.out.println("counted: " + s + " : " + cur + " counter: " + count);
 
             return String.format("%s %d", s, cur);
         }
@@ -142,6 +170,9 @@ public class StatefulDemoLongRun {
 
         @Override
         public void run(SourceContext<Tuple2<String, String>> ctx) throws Exception {
+            // warm up
+            Thread.sleep(10000);
+
             while (isRunning && count < nTuples) {
                 if (count % rate  == 0) {
                     Thread.sleep(1000);
@@ -150,7 +181,7 @@ public class StatefulDemoLongRun {
                     String key = getChar(count);
                     int curCount = keyCount.getOrDefault(key, 0)+1;
                     keyCount.put(key, curCount);
-                    System.out.println("sent: " + key + " : " + curCount + " total: " + count);
+//                    System.out.println("sent: " + key + " : " + curCount + " total: " + count);
                     ctx.collect(Tuple2.of(key, key));
 
                     count++;
@@ -158,8 +189,11 @@ public class StatefulDemoLongRun {
             }
         }
 
+//        private String getChar(int cur) {
+//            return "A" + (cur % nKeys);
+//        }
         private String getChar(int cur) {
-            return "A" + (cur % nKeys);
+            return "A" + cur;
         }
 
         @Override

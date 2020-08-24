@@ -88,7 +88,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>flinkapp.StatefulDemoLongRun</mainClass>
+                  <mainClass>Nexmark.queries.Query2</mainClass>
                 </transformer>
               </transformers>
             </configuration>

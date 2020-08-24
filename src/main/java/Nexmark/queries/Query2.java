@@ -22,14 +22,21 @@ import Nexmark.sinks.DummyLatencyCountingSink;
 import Nexmark.sources.BidSourceFunction;
 import org.apache.beam.sdk.nexmark.model.Bid;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
 
 public class Query2 {
 
@@ -45,12 +52,28 @@ public class Query2 {
 
         env.disableOperatorChaining();
 
+        env.enableCheckpointing(1000);
+        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+
         // enable latency tracking
         env.getConfig().setLatencyTrackingInterval(5000);
 
         final int srcRate = params.getInt("srcRate", 100000);
+        final int srcCycle = params.getInt("srcCycle", 60);
+        final int srcBase = params.getInt("srcBase", 0);
+        final int srcWarmUp = params.getInt("srcWarmUp", 100);
+        final int srcTupleSize = params.getInt("srcTupleSize", 100);
 
-        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate)).setParallelism(params.getInt("p-source", 1));
+        DataStream<Bid> bids = env.addSource(new BidSourceFunction(srcRate, srcCycle, srcBase, srcWarmUp*1000, srcTupleSize))
+                .setParallelism(params.getInt("p-source", 1))
+                .setMaxParallelism(params.getInt("mp2", 64))
+                .keyBy(new KeySelector<Bid, Long>() {
+                    @Override
+                    public Long getKey(Bid bid) throws Exception {
+                        return bid.auction;
+                    }
+                });
+
 
         // SELECT Rstream(auction, price)
         // FROM Bid [NOW]
@@ -58,13 +81,27 @@ public class Query2 {
 
         DataStream<Tuple2<Long, Long>> converted = bids
                 .flatMap(new FlatMapFunction<Bid, Tuple2<Long, Long>>() {
+                    int count = 0;
+
                     @Override
                     public void flatMap(Bid bid, Collector<Tuple2<Long, Long>> out) throws Exception {
+                        count++;
+
+                        if (count == 200000 && !isErrorHappened()) {
+                            int err = count / 0;
+                        }
+
+                        long start = System.nanoTime();
+                        while(System.nanoTime() - start < 100000) {}
+
                         if(bid.auction % 1007 == 0 || bid.auction % 1020 == 0 || bid.auction % 2001 == 0 || bid.auction % 2019 == 0 || bid.auction % 2087 == 0) {
                             out.collect(new Tuple2<>(bid.auction, bid.price));
                         }
                     }
-                }).setParallelism(params.getInt("p-flatMap", 1));
+                }).setMaxParallelism(params.getInt("mp2", 64))
+                .setParallelism(params.getInt("p2", 1))
+                .name("flatmap")
+                .uid("flatmap");
 
         GenericTypeInfo<Object> objectTypeInfo = new GenericTypeInfo<>(Object.class);
         converted.transform("DummyLatencySink", objectTypeInfo, new DummyLatencyCountingSink<>(logger))
@@ -72,6 +109,27 @@ public class Query2 {
 
         // execute program
         env.execute("Nexmark Query2");
+    }
+
+    private static Boolean isErrorHappened() throws IOException {
+        Scanner scanner = new Scanner(new File("/home/myc/workspace/flink-related/flink-testbed/src/main/resources/err.txt"));
+        String line = scanner.nextLine();
+        if(line.equals("1")) {
+            return true;
+        } else {
+            // modify and return false
+            System.out.println(line);
+            try {
+                FileWriter fileWriter = new FileWriter(new File(
+                        "/home/myc/workspace/flink-related/flink-testbed/src/main/resources/err.txt"), false);
+                fileWriter.write("1");
+                fileWriter.close();
+            } catch (IOException e) {
+                System.out.println("An error occurred.");
+                e.printStackTrace();
+            }
+            return false;
+        }
     }
 
 }

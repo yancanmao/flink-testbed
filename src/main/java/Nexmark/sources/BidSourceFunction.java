@@ -56,10 +56,26 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
         this.base = base;
         this.warmUpInterval = warmUpInterval;
         NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
-//        nexconfig.hotBiddersRatio=1;
+        nexconfig.hotBiddersRatio=1;
         nexconfig.hotAuctionRatio=1;
-//        nexconfig.numInFlightAuctions=1;
-//        nexconfig.numEventGenerators=1;
+        nexconfig.hotSellersRatio=1;
+        nexconfig.numInFlightAuctions=1;
+        nexconfig.numEventGenerators=1;
+        config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
+    }
+
+    public BidSourceFunction(int srcRate, int cycle, int base, int warmUpInterval, int tupleSize) {
+        this.rate = srcRate;
+        this.cycle = cycle;
+        this.base = base;
+        this.warmUpInterval = warmUpInterval;
+        NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
+        nexconfig.hotBiddersRatio=1;
+        nexconfig.hotAuctionRatio=1;
+        nexconfig.hotSellersRatio=1;
+        nexconfig.numInFlightAuctions=1;
+        nexconfig.numEventGenerators=1;
+        nexconfig.avgBidByteSize=tupleSize;
         config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
     }
 
@@ -103,7 +119,8 @@ public class BidSourceFunction extends RichParallelSourceFunction<Bid> {
             } else { // after warm up
                 if (count == 20) {
                     // change input rate every 1 second.
-                    epoch++;
+//                    epoch++;
+                    epoch = (int)((emitStartTime - startTs - warmUpInterval)/1000);
                     curRate = base + Util.changeRateSin(rate, cycle, epoch);
                     System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
                     count = 0;
