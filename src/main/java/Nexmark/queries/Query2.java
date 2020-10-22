@@ -87,18 +87,18 @@ public class Query2 {
                     public void flatMap(Bid bid, Collector<Tuple2<Long, Long>> out) throws Exception {
                         count++;
 
-                        if (count == 200000 && !isErrorHappened()) {
-                            int err = count / 0;
-                        }
+//                        if (!isErrorHappened()) {
+//                            int err = count / 0;
+//                        }
 
                         long start = System.nanoTime();
-                        while(System.nanoTime() - start < 100000) {}
+                        while(System.nanoTime() - start < 10*1000000) {}
 
                         if(bid.auction % 1007 == 0 || bid.auction % 1020 == 0 || bid.auction % 2001 == 0 || bid.auction % 2019 == 0 || bid.auction % 2087 == 0) {
                             out.collect(new Tuple2<>(bid.auction, bid.price));
                         }
                     }
-                }).setMaxParallelism(params.getInt("mp2", 64))
+                }).setMaxParallelism(params.getInt("mp2", 128))
                 .setParallelism(params.getInt("p2", 1))
                 .name("flatmap")
                 .uid("flatmap");

@@ -95,8 +95,6 @@ public class StatefulDemoLongRun {
 
         @Override
         public String map(Tuple2<String, String> input) throws Exception {
-            long start = System.nanoTime();
-            while(System.nanoTime() - start < 10000) {}
 
             String s = input.f0;
 
@@ -106,8 +104,11 @@ public class StatefulDemoLongRun {
 
             count++;
 
+            long start = System.nanoTime();
+            while(System.nanoTime() - start < 10*1000000) {}
+
 //            // throw an exception to make task fails
-            if (count == 2000 && !isErrorHappened()) {
+            if (!isErrorHappened()) {
                 int err = count / 0;
             }
 
