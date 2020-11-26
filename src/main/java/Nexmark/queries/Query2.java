@@ -52,8 +52,8 @@ public class Query2 {
 
         env.disableOperatorChaining();
 
-        env.enableCheckpointing(1000);
-        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+//        env.enableCheckpointing(1000);
+//        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
         // enable latency tracking
         env.getConfig().setLatencyTrackingInterval(5000);

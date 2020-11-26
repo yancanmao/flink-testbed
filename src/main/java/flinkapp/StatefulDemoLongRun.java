@@ -104,13 +104,13 @@ public class StatefulDemoLongRun {
 
             count++;
 
-            long start = System.nanoTime();
-            while(System.nanoTime() - start < 10*1000000) {}
-
-//            // throw an exception to make task fails
-            if (!isErrorHappened()) {
-                int err = count / 0;
-            }
+//            long start = System.nanoTime();
+//            while(System.nanoTime() - start < 10*1000000) {}
+//
+////            // throw an exception to make task fails
+//            if (!isErrorHappened()) {
+//                int err = count / 0;
+//            }
 
 //            System.out.println("counted: " + s + " : " + cur + " counter: " + count);
 
