@@ -51,35 +51,35 @@ public class TestingWorkload {
 		env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
 		DataStreamSource<Tuple2<String, Long>> source = env.addSource(new MySource(
-			params.getInt("runtime", 10),
-			params.getInt("nTuples", 10000),
-			params.getInt("nKeys", 1000)
+				params.getInt("runtime", 10),
+				params.getInt("nTuples", 10000),
+				params.getInt("nKeys", 1000)
 		));
 		DataStream<String> mapStream = source
-			.disableChaining()
-			.map(new MapFunction<Tuple2<String, Long>, Tuple2<String, Long>>() {
-				@Override
-				public Tuple2<String, Long> map(Tuple2<String, Long> stringLongTuple2) throws Exception {
-					return stringLongTuple2;
-				}
-			})
-			.name("source")
-			.setParallelism(1)
-			.keyBy(0)
-			.map(new MyStatefulMap())
-			.name("Splitter Flatmap")
-			.setParallelism(2);
+				.disableChaining()
+				.map(new MapFunction<Tuple2<String, Long>, Tuple2<String, Long>>() {
+					@Override
+					public Tuple2<String, Long> map(Tuple2<String, Long> stringLongTuple2) throws Exception {
+						return stringLongTuple2;
+					}
+				})
+				.name("source")
+				.setParallelism(1)
+				.keyBy(0)
+				.map(new MyStatefulMap())
+				.name("Splitter Flatmap")
+				.setParallelism(2);
 
 		DataStream<String> counts = mapStream
-			.filter(input -> true)
-			.name("filter")
-			.uid("filter")
-			.setParallelism(params.getInt("p2", 2));
+				.filter(input -> true)
+				.name("filter")
+				.uid("filter")
+				.setParallelism(params.getInt("p2", 2));
 
 		counts.transform("Count Sink", new GenericTypeInfo<>(Object.class),
-			new DummyNameSink<>("count sink"))
-			.uid("dummy-count-sink")
-			.setParallelism(params.getInt("p3", 1));
+				new DummyNameSink<>("count sink"))
+				.uid("dummy-count-sink")
+				.setParallelism(params.getInt("p3", 1));
 
 		System.out.println(env.getExecutionPlan());
 		env.execute();
@@ -114,7 +114,7 @@ public class TestingWorkload {
 		@Override
 		public void open(Configuration config) {
 			MapStateDescriptor<String, Long> descriptor =
-				new MapStateDescriptor<>("word-count", String.class, Long.class);
+					new MapStateDescriptor<>("word-count", String.class, Long.class);
 
 			countMap = getRuntimeContext().getMapState(descriptor);
 		}
@@ -137,9 +137,9 @@ public class TestingWorkload {
 			this.nKeys = nKeys;
 			this.rate = nTuples / runtime;
 			System.out.println("runtime: " + runtime
-				+ ", nTuples: " + nTuples
-				+ ", nKeys: " + nKeys
-				+ ", rate: " + rate);
+					+ ", nTuples: " + nTuples
+					+ ", nKeys: " + nKeys
+					+ ", rate: " + rate);
 		}
 
 		@Override
@@ -151,8 +151,8 @@ public class TestingWorkload {
 		@Override
 		public void initializeState(FunctionInitializationContext context) throws Exception {
 			this.checkpointedCount = context
-				.getOperatorStateStore()
-				.getListState(new ListStateDescriptor<>("checkpointedCount", Integer.class));
+					.getOperatorStateStore()
+					.getListState(new ListStateDescriptor<>("checkpointedCount", Integer.class));
 
 			if (context.isRestored()) {
 				for (Integer count : this.checkpointedCount.get()) {

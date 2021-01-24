@@ -19,8 +19,8 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 
 public class StatefulDemo {
 
-//    private static final int MAX = 1000000 * 10;
-    private static final int MAX = 1000;
+    private static final int MAX = 1000000 * 4;
+//    private static final int MAX = 1000;
     private static final int NUM_LETTERS = 26;
 
     public static void main(String[] args) throws Exception {
@@ -38,12 +38,12 @@ public class StatefulDemo {
             .keyBy(0)
             .map(new MyStatefulMap())
             .disableChaining()
-//            .filter(input -> {
-//                return Integer.parseInt(input.split(" ")[1]) >= MAX;
-//            })
             .name("Splitter FlatMap")
             .uid("flatmap")
-            .setParallelism(2)
+            .setParallelism(4)
+            .filter(input -> {
+                return Integer.parseInt(input.split(" ")[1]) >= MAX;
+            })
             .addSink(kafkaProducer);
 
         env.execute();
