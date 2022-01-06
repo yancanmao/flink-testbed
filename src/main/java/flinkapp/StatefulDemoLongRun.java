@@ -1,6 +1,7 @@
 package flinkapp;
 
 import Nexmark.sinks.DummySink;
+import Nexmark.sources.Util;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
@@ -12,18 +13,15 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
-import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 
-import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 public class StatefulDemoLongRun {
 
@@ -39,14 +37,18 @@ public class StatefulDemoLongRun {
 
 
         env.disableOperatorChaining();
-        env.enableCheckpointing(1000);
-        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+//        env.enableCheckpointing(1000);
+//        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
-        DataStreamSource<Tuple2<String, String>> source = env.addSource(new MySource(
+        env.setStateBackend(new MemoryStateBackend(1073741824));
+
+        DataStreamSource<Tuple2<String, String>> source = env.addSource(
+                new MySource(
                 params.getInt("runtime", 10),
                 params.getInt("nTuples", 10000),
-                params.getInt("nKeys", 1000)
-        ));
+                params.getInt("nKeys", 1000))
+//                new SineSource()
+        ).setParallelism(params.getInt("p1", 1));
         DataStream<String> counts = source
             .keyBy(0)
             .map(new MyStatefulMap())
@@ -74,27 +76,6 @@ public class StatefulDemoLongRun {
 
         private int count = 0;
 
-        private static Boolean isErrorHappened() throws IOException {
-            Scanner scanner = new Scanner(new File("/home/myc/workspace/flink-related/flink-testbed/src/main/resources/err.txt"));
-            String line = scanner.nextLine();
-            if(line.equals("1")) {
-                return true;
-            } else {
-                // modify and return false
-                System.out.println(line);
-                try {
-                    FileWriter fileWriter = new FileWriter(new File(
-                            "/home/myc/workspace/flink-related/flink-testbed/src/main/resources/err.txt"), false);
-                    fileWriter.write("1");
-                    fileWriter.close();
-                } catch (IOException e) {
-                    System.out.println("An error occurred.");
-                    e.printStackTrace();
-                }
-                return false;
-            }
-        }
-
         @Override
         public String map(Tuple2<String, String> input) throws Exception {
 
@@ -106,15 +87,8 @@ public class StatefulDemoLongRun {
 
             count++;
 
-//            long start = System.nanoTime();
-//            while(System.nanoTime() - start < 10*1000000) {}
-//
-////            // throw an exception to make task fails
-//            if (!isErrorHappened()) {
-//                int err = count / 0;
-//            }
-
-//            System.out.println("counted: " + s + " : " + cur + " counter: " + count);
+            long start = System.nanoTime();
+            while(System.nanoTime() - start < 10000) {}
 
             return String.format("%s %d", s, cur);
         }
@@ -128,7 +102,7 @@ public class StatefulDemoLongRun {
         }
     }
 
-    private static class MySource implements SourceFunction<Tuple2<String, String>>, CheckpointedFunction {
+    private static class MySource extends RichParallelSourceFunction<Tuple2<String, String>> implements CheckpointedFunction {
 
         private int count = 0;
         private volatile boolean isRunning = true;
@@ -173,28 +147,95 @@ public class StatefulDemoLongRun {
 
         @Override
         public void run(SourceContext<Tuple2<String, String>> ctx) throws Exception {
-            // warm up
-            Thread.sleep(10000);
-
+            long emitStartTime;
             while (isRunning && count < nTuples) {
-                if (count % rate  == 0) {
-                    Thread.sleep(1000);
-                }
-                synchronized (ctx.getCheckpointLock()) {
+                emitStartTime = System.currentTimeMillis();
+                for (int i = 0; i < rate / 20; i++) {
                     String key = getChar(count);
-                    int curCount = keyCount.getOrDefault(key, 0)+1;
+                    int curCount = keyCount.getOrDefault(key, 0) + 1;
                     keyCount.put(key, curCount);
-//                    System.out.println("sent: " + key + " : " + curCount + " total: " + count);
-                    ctx.collect(Tuple2.of(key, key));
-
+                    ctx.collect(Tuple2.of(key, String.valueOf(System.currentTimeMillis())));
                     count++;
                 }
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
             }
         }
 
 //        private String getChar(int cur) {
 //            return "A" + (cur % nKeys);
 //        }
+        private String getChar(int cur) {
+            return "A" + cur;
+        }
+
+        @Override
+        public void cancel() {
+            isRunning = false;
+        }
+    }
+
+    private static class SineSource extends RichParallelSourceFunction<Tuple2<String, String>> implements CheckpointedFunction {
+
+        private int count = 0;
+        private int nextKey = 0;
+        private volatile boolean isRunning = true;
+
+        private transient ListState<Integer> checkpointedCount;
+
+        int cycle = 60;
+        int epoch = 0;
+        int base = 50000;
+        int rate = 25000;
+        int curRate = base + rate;
+
+        private SineSource() {
+        }
+
+        @Override
+        public void snapshotState(FunctionSnapshotContext functionSnapshotContext) throws Exception {
+            this.checkpointedCount.clear();
+            this.checkpointedCount.add(count);
+        }
+
+        @Override
+        public void initializeState(FunctionInitializationContext context) throws Exception {
+            this.checkpointedCount = context
+                    .getOperatorStateStore()
+                    .getListState(new ListStateDescriptor<>("checkpointedCount", Integer.class));
+
+            if (context.isRestored()) {
+                for (Integer count : this.checkpointedCount.get()) {
+                    this.count = count;
+                }
+            }
+        }
+
+        @Override
+        public void run(SourceContext<Tuple2<String, String>> ctx) throws Exception {
+            long emitStartTime;
+            while (isRunning) {
+                emitStartTime = System.currentTimeMillis();
+                if (count == 20) {
+                    // change input rate every 1 second.
+                    epoch++;
+                    curRate = base + Util.changeRateSin(rate, cycle, epoch);
+                    System.out.println("epoch: " + epoch % cycle + " current rate is: " + curRate);
+                    count = 0;
+                }
+
+                for (int i = 0; i < curRate / 20; i++) {
+                    String key = getChar(nextKey);
+                    ctx.collect(Tuple2.of(key, String.valueOf(System.currentTimeMillis())));
+                    nextKey++;
+                }
+
+                // Sleep for the rest of timeslice if needed
+                Util.pause(emitStartTime);
+                count++;
+            }
+        }
+
         private String getChar(int cur) {
             return "A" + cur;
         }
