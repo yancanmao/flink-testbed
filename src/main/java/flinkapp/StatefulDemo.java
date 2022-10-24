@@ -19,8 +19,8 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 
 public class StatefulDemo {
 
-//    private static final int MAX = 1000000 * 10;
-    private static final int MAX = 1000;
+    private static final int MAX = 1000000 * 10;
+//    private static final int MAX = 1000;
     private static final int NUM_LETTERS = 26;
 
     public static void main(String[] args) throws Exception {
@@ -29,9 +29,9 @@ public class StatefulDemo {
         env.enableCheckpointing(1000);
         env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
-        FlinkKafkaProducer011<String> kafkaProducer = new FlinkKafkaProducer011<String>(
-                "localhost:9092", "my-flink-demo-topic0", new SimpleStringSchema());
-        kafkaProducer.setWriteTimestampToKafka(true);
+//        FlinkKafkaProducer011<String> kafkaProducer = new FlinkKafkaProducer011<String>(
+//                "localhost:9092", "my-flink-demo-topic0", new SimpleStringSchema());
+//        kafkaProducer.setWriteTimestampToKafka(true);
 
         DataStreamSource<Tuple2<String, String>> source = env.addSource(new MySource());
         source
@@ -43,8 +43,8 @@ public class StatefulDemo {
 //            })
             .name("Splitter FlatMap")
             .uid("flatmap")
-            .setParallelism(2)
-            .addSink(kafkaProducer);
+            .setParallelism(2);
+//            .addSink(kafkaProducer);
 
         env.execute();
     }

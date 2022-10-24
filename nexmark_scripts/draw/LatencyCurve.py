@@ -60,7 +60,7 @@ def ReadFile():
     coly = []
     temp_dict = {}
     start_ts = 0
-    f = open("/home/myc/workspace/flink-related/flink-extended-copy/build-target/log/flink-myc-taskexecutor-0-myc-amd.out")
+    f = open("/home/samza/workspace/flink-related/flink-comparison/flink-ds2/build-target/log/flink-samza-taskexecutor-0-giraffe-sane.out")
     read = f.readlines()
     for r in read:
         if r.find("endToEnd latency: ") != -1:
@@ -69,22 +69,13 @@ def ReadFile():
             ts = int(int(r.split("ts: ")[1][:13]) / 1000) - start_ts
             if 60 < ts < 360:
                 latency = int(r.split("endToEnd latency: ")[1])
-                col.append(latency)
-            # if ts not in temp_dict:
-            #     temp_dict[ts] = []
-            # temp_dict[ts].append(latency)
+                if ts not in temp_dict:
+                    temp_dict[ts] = []
+                temp_dict[ts].append(latency)
 
-    # for ts in temp_dict:
-    #     # coly.append(sum(temp_dict[ts]) / len(temp_dict[ts]))
-    #     # col.append(ts)
-    #     # cdf
-    #     col.append(sum(temp_dict[ts]) / len(temp_dict[ts]))
-    # x_axis.append([x+3 for x in col][17:117])
-    # y_axis.append(coly[17:117])
-
-    # calculate the proportional values of samples
-    col.sort()
-    coly = 1. * arange(len(col)) / (len(col) - 1)
+    for ts in temp_dict:
+        coly.append(sum(temp_dict[ts]) / len(temp_dict[ts]))
+        col.append(ts)
     x_axis.append(col)
     y_axis.append(coly)
 
@@ -92,36 +83,24 @@ def ReadFile():
     coly = []
     temp_dict = {}
     start_ts = 0
-    f = open("/home/myc/workspace/flink-related/flink-extended/build-target/log/flink-myc-taskexecutor-0-myc-amd.out.1")
+    f = open("/home/samza/workspace/flink-related/flink-comparison/flink-ss/build-target/log/flink-samza-taskexecutor-0-giraffe-sane.out")
     read = f.readlines()
     for r in read:
         if r.find("endToEnd latency: ") != -1:
             if start_ts == 0:
                 start_ts = int(int(r.split("ts: ")[1][:13]) / 1000)
             ts = int(int(r.split("ts: ")[1][:13]) / 1000) - start_ts
-            latency = int(r.split("endToEnd latency: ")[1])
-            # if ts not in temp_dict:
-            #     temp_dict[ts] = []
-            # temp_dict[ts].append(latency)
-            col.append(latency)
+            if 60 < ts < 360:
+                latency = int(r.split("endToEnd latency: ")[1])
+                if ts not in temp_dict:
+                    temp_dict[ts] = []
+                temp_dict[ts].append(latency)
 
-    # for ts in temp_dict:
-    #     # coly.append(sum(temp_dict[ts]) / len(temp_dict[ts]))
-    #     # col.append(ts)
-    #     # cdf
-    #     col.append(sum(temp_dict[ts]) / len(temp_dict[ts]))
-    # x_axis.append([x + 3 for x in col][17:117])
-    # y_axis.append(coly[17:117])
-
-    # calculate the proportional values of samples
-    col.sort()
-    coly = 1. * arange(len(col)) / (len(col) - 1)
+    for ts in temp_dict:
+        coly.append(sum(temp_dict[ts]) / len(temp_dict[ts]))
+        col.append(ts)
     x_axis.append(col)
     y_axis.append(coly)
-
-
-    print(x_axis)
-    print(y_axis)
 
     return x_axis, y_axis
 
@@ -186,4 +165,4 @@ if __name__ == "__main__":
     legend_labels = ["DS2", "StreamSwitch"]
     # legend_labels = ["Flink"]
     legend = True
-    DrawFigure(x_axis, y_axis, legend_labels, "Latency(ms)", "CDF(%)", "comparison_latency", legend)
+    DrawFigure(x_axis, y_axis, legend_labels, "Time(s)", "Latency(ms)", "comparison_latency_curve", legend)
